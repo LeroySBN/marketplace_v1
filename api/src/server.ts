@@ -10,7 +10,7 @@ app.get('/', (req, res) => {
 });
 
 // Specify the port to listen on
-const port = parseInt(process.env.PORT || '5000', 10);
+const port = parseInt(process.env.PORT || '5000');
 
 // Start the server
 app.listen(port, () => {

@@ -1,18 +1,31 @@
 import express from 'express';
-// import dotenv from 'dotenv';
+import http from 'http';
+import bodyParser from 'body-parser';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import router from './routes/index';
+
+dotenv.config();
 
 // Create an Express application
 const app = express();
 
-// Define a route for the root URL
-app.get('/', (req, res) => {
-  res.send('Hello, world!');
-});
+app.use(cors({
+  credentials: true,
+}));
+
+app.use(bodyParser.json());
+app.use(express.urlencoded({ extended: true }));
+
+app.use('/', router);
 
 // Specify the port to listen on
-const port = parseInt(process.env.PORT || '5000');
+const host = process.env.HOST || '0.0.0.0';
+const port = parseInt(process.env.PORT || '8000', 10);
+
+const server = http.createServer(app);
 
 // Start the server
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+server.listen(port, host, () => {
+  console.log(`Server is running on http://${host}:${port}\nPress Ctrl+C to stop`);
 });

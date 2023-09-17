@@ -1,6 +1,6 @@
 # ALX Specialization Project
 
-This is a TypeScript-based project that serves as a foundation for building a web application. This README provides an overview of the project, its requirements, and instructions for running and contributing to it.
+This is a TypeScript-based API project that serves as a foundation for building a web application. This README provides an overview of the project, its requirements, and instructions for running and contributing to it.
 
 ## Table of Contents
 
@@ -30,10 +30,10 @@ Follow these steps to get the project up and running on your local machine:
 
 1. Clone the repository:
 
-   ```bash
-   git clone <repository-url>
-   cd alx-specialization_project
-   ```
+  ```bash
+  git clone <repository-url>
+  cd alx-specialization_project
+  ```
 
 2. Install project dependencies
 
@@ -44,10 +44,11 @@ Follow these steps to get the project up and running on your local machine:
   Create a **.env** file in the project root and configure the following environment variables as needed:
 
   ```
+  HOST='0.0.0.0'
   PORT=8000
   MONGODB_HOST=localhost
   MONGODB_PORT=27017
-  DB_DATABASE=procurement_ms
+  MONGODB_DATABASE=procurement_ms
   REDIS_HOST=localhost
   REDIS_PORT=6379
   REDIS_DB=0

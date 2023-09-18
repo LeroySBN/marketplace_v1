@@ -1,6 +1,6 @@
-import { Request, Response } from "express";
-import { BaseObject } from "./main";
-import mongoClient from "../utils/mongo";
+import { Request, Response } from 'express';
+import { BaseObject } from './main';
+import mongoClient from '../utils/mongo';
 
 export interface Product extends BaseObject {
   vendorId: string;

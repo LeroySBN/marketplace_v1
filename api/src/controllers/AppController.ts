@@ -20,6 +20,7 @@ class AppController {
       users,
       vendors,
       products,
+      orders,
     };
     return res.status(200).json(status);
   }

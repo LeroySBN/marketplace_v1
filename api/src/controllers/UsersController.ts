@@ -3,11 +3,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { Request, Response } from 'express';
 import sha1 from 'sha1';
 import { BaseObject } from './main';
-import mongoClient from '../utils/mongo';
-import redisClient from '../utils/redis';
 import { CartItem } from './CartController';
 import { Product } from './ProductsController';
 import { OrderItem } from './OrdersController';
+import mongoClient from '../utils/mongo';
+import redisClient from '../utils/redis';
 
 export interface User extends BaseObject {
   email: string;

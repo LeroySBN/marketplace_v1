@@ -1,12 +1,12 @@
-import { ObjectId } from "mongodb";
-import { v4 as uuidv4 } from "uuid";
-import { Request, Response } from "express";
-import sha1 from "sha1";
-import { BaseObject } from "./main";
-import mongoClient from "../utils/mongo";
-import redisClient from "../utils/redis";
-import { Product } from "./ProductsController";
-import { OrderItem } from "./OrdersController";
+import { ObjectId } from 'mongodb';
+import { v4 as uuidv4 } from 'uuid';
+import { Request, Response } from 'express';
+import sha1 from 'sha1';
+import { BaseObject } from './main';
+import { Product } from './ProductsController';
+import { OrderItem } from './OrdersController';
+import mongoClient from '../utils/mongo';
+import redisClient from '../utils/redis';
 
 interface Vendor extends BaseObject {
   email: string;

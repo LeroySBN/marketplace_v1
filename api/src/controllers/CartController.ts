@@ -1,4 +1,4 @@
-import { BaseObject } from "./main";
+import { BaseObject } from './main';
 
 export interface CartItem extends BaseObject {
   productId: string;

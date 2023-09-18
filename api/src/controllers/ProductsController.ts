@@ -1,13 +1,12 @@
 import { Request, Response } from "express";
 import { BaseObject } from "./main";
 import mongoClient from "../utils/mongo";
-import { parse } from "path";
 
 export interface Product extends BaseObject {
   vendorId: string;
   name: string;
   price: number;
-  quantity: number;
+  stock: number;
   imageUrl: string;
   description?: string;
   category?: string;

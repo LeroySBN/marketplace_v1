@@ -2,6 +2,10 @@
   "name": "alx-specialization_project",
   "version": "1.0.0",
   "description": "",
+  "keywords": ["procurement", "management", "API", "backend"],
+  "type": "module",
+  "author": "Leroy Buliro",
+  "license": "MIT", 
   "main": "dist/server.js",
   "scripts": {
     "lint": "eslint src/**/*.ts",
@@ -11,9 +15,6 @@
     "build": "webpack",
     "test": "jest"
   },
-  "keywords": [],
-  "author": "Leroy Buliro",
-  "license": "ISC",
   "dependencies": {
     "body-parser": "^1.20.2",
     "cookie-parser": "^1.4.6",
@@ -44,5 +45,10 @@
     "typescript": "^5.2.2",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^4.15.1"
+  },
+  "contributors": [],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/leroysb/alx-specialization_project.git"
   }
 }

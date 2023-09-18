@@ -12,9 +12,10 @@ class AppController {
   }
 
   static async getStats(req: Request, res: Response): Promise<Response | void> {
-    const users = await mongoClient.nbUsers();
     const vendors = await mongoClient.nbVendors();
     const products = await mongoClient.nbProducts();
+    const users = await mongoClient.nbUsers();
+    const orders = await mongoClient.nbOrders();
     const status = {
       users,
       vendors,

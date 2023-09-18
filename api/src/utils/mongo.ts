@@ -4,9 +4,9 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const host = process.env.DB_HOST || 'localhost';
-const port = process.env.DB_PORT || 27017;
-const database = process.env.DB_DATABASE || 'procurement_ms';
+const host = process.env.MONGODB_HOST || 'localhost';
+const port = process.env.MONGODB_PORT || 27017;
+const database = process.env.MONGODB_DATABASE || 'procurement_ms';
 
 const url = `mongodb://${host}:${port}`;
 
@@ -59,6 +59,15 @@ class MongoDBClient {
     const productsCollection = this.db.collection('products');
     const productCount = await productsCollection.countDocuments();
     return productCount;
+  }
+
+  async nbOrders() {
+    if (!this.isAlive()) {
+      return -1;
+    }
+    const ordersCollection = this.db.collection('orders');
+    const orderCount = await ordersCollection.countDocuments();
+    return orderCount;
   }
 }
 

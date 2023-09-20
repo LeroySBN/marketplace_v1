@@ -1,21 +1,12 @@
-import { ObjectId } from 'mongodb';
-import { v4 as uuidv4 } from 'uuid';
 import { Request, Response } from 'express';
+import { v4 as uuidv4 } from 'uuid';
 import sha1 from 'sha1';
-import { BaseObject } from './main';
-import { CartItem } from './CartController';
-import { Product } from './ProductsController';
-import { OrderItem } from './OrdersController';
+
+import { UserObj, VendorObj, ProductObj, CartObj, OrderObj, productDeliveryObj, DeliveryObj } from './main';
 import mongoClient from '../utils/mongo';
 import redisClient from '../utils/redis';
+import { count } from 'console';
 
-export interface User extends BaseObject {
-  email: string;
-  password: string;
-  firstName?: string;
-  lastName?: string;
-  cart?: CartItem[];
-}
 
 class UsersController {
   static async postUser(req: Request, res: Response): Promise<Response | void> {
@@ -30,7 +21,7 @@ class UsersController {
         return res.status(400).json({ error: 'Missing password' });
       }
 
-      const user: User = {
+      const user: UserObj = {
         _id: uuidv4(),
         dateCreated: new Date().toISOString(),
         email,
@@ -45,7 +36,12 @@ class UsersController {
       const result = await users.findOne({email}) ;
 
       if (result) {
-        return res.status(400).json({ error: 'Already exists' });
+        const authKey = Buffer.from(`${email}:${password}`).toString('base64');
+        return res.status(400).json({ 
+          error: `Already exists`,
+          Authentication: `Basic ${authKey}`, // Remove this line in production
+          result, // Remove this line in production
+         });
       }
 
       await users.insertOne(user)
@@ -71,7 +67,7 @@ class UsersController {
         const users = mongoClient.db.collection('users');
         const user = await users.findOne({ _id: userId });
         if (user) {
-          return res.status(200).json({ id: user._id, email: user.email });
+          return res.status(200).json({ id: user._id, email: user.email, cart: user.cart });
         }
       }
       return res.status(401).json({ error: 'Unauthorized' });
@@ -83,234 +79,320 @@ class UsersController {
   }
 
   static async putUserCart(req: Request, res: Response): Promise<Response | void> {
-    const token = req.header('X-Token');
-    const userId = await redisClient.get(`auth_${token}`);
-    const { productId, quantity } = req.body;
-
-    if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    const users = await mongoClient.db.collection('users');
-
-    users.findOne({ _id: new ObjectId(userId) }, (err: Error, user: User): any => {
-      if (!user) {
+    try {
+      const token = req.header('X-Token');
+      const userId = await redisClient.get(`auth_${token}`);
+      
+      if (!userId) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
-      if (quantity < 1 && !Number.isInteger(quantity)) {
-        return res.status(400).json({ error: 'Quantity must be a positive integer' });
-      }
-      // if product id and quantity are provided, add to cart or update quantity
-      if (productId && quantity) {
-        const product = mongoClient.db.collection('products').findOne({ _id: new ObjectId(productId) });
-        // check if product exists
+      
+      const user =  await mongoClient.db.collection('users').findOne({ _id: userId });
+      
+      if (user) {
+        const { productId, quantity } = req.body;
+        
+        if (!productId) {
+          return res.status(400).json({ error: 'Missing productId' });
+        }
+
+        if (!quantity) {
+          return res.status(400).json({ error: 'Missing quantity' });
+        }
+        
+        if (!Number.isInteger(quantity) || quantity < 1) {
+          return res.status(400).json({ error: 'Quantity should be a positive integer' });
+        }
+        
+        const product = await mongoClient.db.collection('products').findOne({ _id: productId });
+        console.log(product);
+        
         if (!product) {
           return res.status(404).json({ error: 'Product not available' });
         }
+
         if (product.stock === 0) {
           return res.status(400).json({ error: 'Product out of stock' });
         }
-        // check if quantity is available
+
         if (quantity > product.stock) {
           const remainingStock = product.stock;
-          return res.status(400).json({ error: `Quantity not available: ${remainingStock} left` });
+          return res.status(400).json({ error: `${remainingStock} available` });
         }
+
         if (quantity <= product.stock) {
-          const cartItem: CartItem = {
+          const cartItem: CartObj = {
             _id: uuidv4(),
             dateCreated: new Date().toISOString(),
             productId,
+            vendorId: product.vendorId,
             quantity,
+            unitPrice: product.price,
             totalPrice: product.price * quantity,
           };
+
           // check if product already in cart. if so, update quantity else add to cart
-          const cart = user.cart;
-          if (cart) {
-            const productInCart = cart.find((item) => item.productId === productId);
-            if (productInCart) {
-              productInCart.quantity = quantity;
-            } else {
-              cart.push(cartItem);
-            }
-            return res.status(200).json(cart);
+          const productInCart = user.cart.find((item: CartObj) => item.productId === productId);
+          if (productInCart) {
+            console.log('productInCart');
+            await user.cart.forEach((item: CartObj) => {
+              if (item.productId === productId) {
+                item.quantity = quantity;
+                item.totalPrice = product.price * quantity;
+              }
+            });
+          } else {
+            await user.cart.push(cartItem);
           }
+          await mongoClient.db.collection('users').updateOne({ _id: userId }, { $set: { cart: user.cart } });
+          return res.status(200).json(cartItem);
         }
+      } else {
+        return res.status(401).json({ error: 'Unauthorized' });
       }
-    });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
   }
 
   static async deleteUserCartItem(req: Request, res: Response): Promise<Response | void> {
-    const token = req.header('X-Token');
-    const userId = await redisClient.get(`auth_${token}`);
-    const { productId } = req.body;
-
-    if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    const users = await mongoClient.db.collection('users');
-
-    users.findOne({ _id: new ObjectId(userId) }, (err: Error, user: User): any => {
-      if (!user) {
+    try {
+      const token = req.header('X-Token');
+      const userId = await redisClient.get(`auth_${token}`);
+      
+      if (!userId) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
-      if (!productId) {
-        return res.status(400).json({ error: 'Missing productId' });
-      }
-      // check if product id exists in cart
-      const cart = user.cart;
-      if (cart) {
-        const productInCart = cart.find((item) => item.productId === productId);
+
+      const user = await mongoClient.db.collection('users').findOne({ _id: userId });
+      
+      if (user) {
+        const { productId } = req.body;
+
+        if (!productId) {
+          return res.status(400).json({ error: 'Missing productId' });
+        }
+
+        const product = await mongoClient.db.collection('products').findOne({ _id: productId });
+
+        if (!product) {
+          return res.status(404).json({ error: 'Product does not exist' });
+        }
+
+        // check if product id exists in cart
+        const productInCart = user.cart.find((item: CartObj) => item.productId === productId);
         if (productInCart) {
-          cart.splice(cart.indexOf(productInCart), 1);
-          return res.status(200).json(cart);
+          user.cart.splice(user.cart.indexOf(productInCart), 1);
+          await mongoClient.db.collection('users').updateOne({ _id: userId }, { $set: { cart: user.cart } });
+          return res.status(200).json(user.cart);
         } else {
           return res.status(400).json({ error: 'Product not in cart' });
         }
+      } else {
+        return res.status(401).json({ error: 'Unauthorized' });
       }
-    });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
   }
 
   static async getUserCheckout(req: Request, res: Response): Promise<Response | void> {
-    const token = req.header('X-Token');
-    const userId = await redisClient.get(`auth_${token}`);
+    try {
+      const token = req.header('X-Token');
+      const userId = await redisClient.get(`auth_${token}`);
 
-    if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    const users = await mongoClient.db.collection('users');
-
-    users.findOne({ _id: new ObjectId(userId) }, (err: Error, user: User): any => {
-      if (!user) {
+      if (userId) {
+        const user = await mongoClient.db.collection('users').findOne({ _id: userId });
+  
+        if (user) {
+          const cart = user.cart;
+          if (cart) {
+            return res.status(200).json(cart);
+          } else {
+            return res.status(404).json({ error: 'Cart is empty' });
+          }
+        }
+      } else {
         return res.status(401).json({ error: 'Unauthorized' });
       }
-      const cart = user.cart;
-      if (cart) {
-        const products = mongoClient.db.collection('products');
-        const productsInCart = cart.map((item) => item.productId);
-        products.find({ _id: { $in: productsInCart } }).toArray((err: Error, products: Product[]): any => {
-          if (products) {
-            const checkout = products.map((product) => {
-              const productInCart = cart.find((item) => item.productId === product._id);
-              return {
-                productId: product._id,
-                name: product.name,
-                quantity: productInCart?.quantity,
-                unitPrice: product.price,
-              };
-            });
-            return res.status(200).json(checkout);
-          } else {
-            return res.status(404).json({ error: 'Products not found' });
-          }
-        });
-      } else {
-        return res.status(404).json({ error: 'Cart is empty' });
-      }
-    });
+
+
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
   }
 
   static async postUserOrder(req: Request, res: Response): Promise<Response | void> {
-    const token = req.header('X-Token');
-    const userId = await redisClient.get(`auth_${token}`);
-    const { order } = req.body;
+    try {
+      const token = req.header('X-Token');
+      const userId = await redisClient.get(`auth_${token}`);
+      
+      if (userId) {
+        const user = await mongoClient.db.collection('users').findOne({ _id: userId });
 
-    if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
+        if (user) {
+          if (user.cart.length > 0) {
+            const productsInCart = user.cart.map((item: CartObj) => item.productId);
+            const products = await mongoClient.db.collection('products').find({ _id: { $in: productsInCart } }).toArray();;
 
-    const users = await mongoClient.db.collection('users');
-
-    users.findOne({ _id: new ObjectId(userId) }, (err: Error, user: User): any => {
-      if (!user) {
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
-
-      if (order !== 1 && order !== 0) {
-        return res.status(400).json({ error: 'Order must be 1 to order otherwise 0' });
-      }
-
-      if (order === 1) {
-        const cart = user.cart;
-
-        if (cart) {
-          const products = mongoClient.db.collection('products');
-          const productsInCart = cart.map((item) => item.productId);
-          products.find({ _id: { $in: productsInCart } }).toArray((err: Error, products: Product[]): any => {
             if (products) {
-              const productsOutOfStock = products.filter((product) => product.stock === 0);
+              const productsOutOfStock = products.filter((product: ProductObj) => product.stock < 1);
 
-              if (productsOutOfStock.length > 0) {
-                return res.status(400).json({ error: 'Some products are out of stock' });
-              }
+              if (productsOutOfStock.length == 0) {
 
-              const productsInStock = products.filter((product) => product.stock > 0);
-
-              if (productsInStock.length > 0) {
-                productsInStock.forEach((product) => {
-                  const productInCart = cart.find((item) => item.productId === product._id);
-                  if (productInCart) {
-                    product.stock -= productInCart.quantity;
-                  }
+                // save new order
+                const order: OrderObj = {
+                  _id: uuidv4(),
+                  dateCreated: new Date().toISOString(),
+                  userId,
+                  status: 'pending',
+                  totalPrice: user.cart.reduce((acc: number, item: CartObj) => acc + item.totalPrice, 0),
+                  items: user.cart,
+                };
+  
+                await mongoClient.db.collection('orders').insertOne(order)
+                .then(() => {
+                  console.log('Order created');
                 });
-              }
+  
+                // save delivery
+                const deliveries: DeliveryObj[] = [];
+                // get unique vendor ids, then create delivery for each vendor, each containing the products for that vendor
+                const vendorIds = user.cart.map((item: CartObj) => item.vendorId);
+                const uniqueVendorIds = [...new Set(vendorIds)];
 
-              const orders = mongoClient.db.collection('orders');
+                uniqueVendorIds.forEach((vendorId: any) => {
+                  const productDelivery: Array<productDeliveryObj> = [];
+                  const items = user.cart.filter((item: CartObj) => item.vendorId === vendorId);
 
-              const order: OrderItem = {
-                _id: uuidv4(),
-                dateCreated: new Date().toISOString(),
-                userId,
-                status: 'pending',
-                totalPrice: cart.reduce((acc, item) => acc + item.totalPrice, 0),
-                items: cart,
-              };
+                  items.forEach((item: CartObj) => {
+                    productDelivery.push({
+                      productId: item.productId,
+                      quantity: item.quantity,
+                      unitPrice: item.unitPrice,
+                    });
+                  });
 
-              orders.insertOne(order)
-              .then(() => {
+                  const delivery: DeliveryObj = {
+                    _id: uuidv4(),
+                    dateCreated: new Date().toISOString(),
+                    orderId: order._id,
+                    userId,
+                    vendorId,
+                    products: productDelivery,
+                    status: 'shipping',
+                  };
+                  deliveries.push(delivery);
+                });             
+
+                await mongoClient.db.collection('deliveries').insertMany(deliveries)
+                .then(() => {
+                  console.log('Delivery created');
+                });
+                
+                // update product stock
+                const productIds = user.cart.map((item: CartObj) => item.productId);
+                const productsToUpdate = await mongoClient.db.collection('products').find({ _id: { $in: productIds } }).toArray();
+
+                await Promise.all(
+                  productsToUpdate.map(async (product: ProductObj) => {
+                    const productInCart = user.cart.find((item: CartObj) => item.productId === product._id);
+                    if (productInCart) {
+                      product.stock -= productInCart.quantity;
+                      await mongoClient.db.collection('products').updateOne({ _id: product._id }, { $set: { stock: product.stock } });
+                    }
+                  })
+                )
+                .then(() => {
+                  console.log('Products updated');
+                });
+
+                // update vendor products
+                const vendorIdsToUpdate = user.cart.map((item: CartObj) => item.vendorId);
+                const vendorsToUpdate = await mongoClient.db.collection('vendors').find({ _id: { $in: vendorIdsToUpdate } }).toArray();
+
+                await Promise.all(
+                  vendorsToUpdate.map(async (vendor: VendorObj | any) => {
+                    const vendorProductsToUpdate = user.cart.filter((item: CartObj) => item.vendorId === vendor._id);
+                    await Promise.all(
+                      vendorProductsToUpdate.map(async (item: CartObj) => {
+                        const products = vendor.products;
+                        const product = products.find((product: ProductObj) => product._id === item.productId);
+                        if (product) {
+                          product.stock -= item.quantity;
+                          await mongoClient.db.collection('vendors').updateOne({ _id: vendor._id }, { $set: { products: vendor.products } });
+                        }
+                      })
+                    );
+                  })
+                )
+                .then(() => {
+                  console.log('Vendor products updated');
+                });
+                
+                // clear cart
+                await mongoClient.db.collection('users').updateOne({ _id: userId }, { $set: { cart: [] } })
+                .then(() => {
+                  console.log('Cart cleared');
+                });
+
                 return res.status(201).json(order);
-              })
-              .catch((error: Error) => {
-                console.error(error);
-                return res.status(400).json({ error: error.message });
-              });
+                
+              } else {
+                const productsOutOfStockNames = productsOutOfStock.map((product: ProductObj) => product.name);
+                return res.status(400).json({ error: `Products out of stock: ${productsOutOfStockNames.join(', ')}` });
+              }
             } else {
               return res.status(404).json({ error: 'Products not found' });
             }
-          });
-        } else {
-          return res.status(404).json({ error: 'Cart is empty' });
+          } else {
+            return res.status(404).json({ error: 'Cart is empty' });
+          }
+        } else {      
+          return res.status(401).json({ error: 'Unauthorized' });
         }
+      } else {
+        return res.status(401).json({ error: 'Unauthorized' });
       }
-    });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
   }
 
   static async getUserOrders(req: Request, res: Response): Promise<Response | void> {
-    const token = req.header('X-Token');
-    const userId = await redisClient.get(`auth_${token}`);
+    try {
+      const token = req.header('X-Token');
+      const userId = await redisClient.get(`auth_${token}`);
 
-    if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    const users = await mongoClient.db.collection('users');
-
-    users.findOne({ _id: new ObjectId(userId) }, (err: Error, user: User): any => {
-      if (!user) {
+      if (userId) {
+        const user = await mongoClient.db.collection('users').findOne({ _id: userId });
+  
+        if (user) {
+          const orders = await mongoClient.db.collection('orders').find({ userId }).toArray();
+    
+          if (orders) {
+            return res.status(200).json({
+              count: orders.length,
+              orders
+            });
+          } else {
+            return res.status(404).json({ error: 'No orders' });
+          }
+        } else {
+          return res.status(401).json({ error: 'Unauthorized' });
+        }
+      } else {
         return res.status(401).json({ error: 'Unauthorized' });
       }
 
-      const orders = mongoClient.db.collection('orders');
-
-      orders.find({ userId }).toArray((err: Error, orders: OrderItem[]): any => {
-        if (orders) {
-          return res.status(200).json(orders);
-        } else {
-          return res.status(404).json({ error: 'Orders not found' });
-        }
-      });
-    });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
   }
 }
 

@@ -1,18 +1,7 @@
 import { Request, Response } from 'express';
-import { BaseObject } from './main';
+
 import mongoClient from '../utils/mongo';
 
-export interface Product extends BaseObject {
-  vendorId: string;
-  name: string;
-  price: number;
-  stock: number;
-  imageUrl: string;
-  description?: string;
-  category?: string;
-}
-
-// Get list of products with pagination (10 per page) & filter by category
 
 class ProductsController {
   static async getProducts(req: Request, res: Response): Promise<Response | void> {

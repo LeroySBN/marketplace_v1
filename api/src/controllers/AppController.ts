@@ -16,11 +16,13 @@ class AppController {
     const products = await mongoClient.nbProducts();
     const users = await mongoClient.nbUsers();
     const orders = await mongoClient.nbOrders();
+    const deliveries = await mongoClient.nbDeliveries();
     const status = {
       users,
       vendors,
       products,
       orders,
+      deliveries,
     };
     return res.status(200).json(status);
   }

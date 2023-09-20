@@ -1,8 +1,10 @@
 import sha1 from 'sha1';
 import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
+
 import mongoClient from '../utils/mongo';
 import redisClient from '../utils/redis';
+
 
 class AuthController {
   static async getConnect(req: Request, res: Response): Promise<Response | void> {

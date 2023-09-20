@@ -5,28 +5,25 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const host = process.env.MONGODB_HOST || 'localhost';
-const port = process.env.MONGODB_PORT || 27017;
+const port = parseInt(process.env.MONGODB_PORT || '27017', 10);
 const database = process.env.MONGODB_DATABASE || 'procurement_ms';
 
 const url = `mongodb://${host}:${port}`;
 
 class MongoDBClient {
-  client: MongoClient | null = null;
+  client: MongoClient;
   db: any;
 
   constructor() {
-    this.connectToMongo();
-  }
-
-  private async connectToMongo() {
+    this.client = new MongoClient(url);
     try {
-      this.client = new MongoClient(url);
-      await this.client.connect();
-      this.db = this.client.db(`${database}`);
-      console.log('Connected to MongoDB');
-    } catch (error: any) {
-      console.error('MongoDB connection error:', error.message);
-      this.client = null; // Set client to null on error
+      this.client.connect().then(() => {
+        this.db = this.client.db(database);
+      }).catch((err) => {
+        console.log(err);
+      });
+    } catch (err) {
+      console.log(err);
     }
   }
 

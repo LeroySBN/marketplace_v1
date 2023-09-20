@@ -20,7 +20,9 @@ router.get('/vendors/products', VendorsController.getVendorProducts); // get all
 router.get('/vendors/orders', VendorsController.getVendorOrders); // get all orders - no pagination
 // Products routes
 router.get('/products', ProductsController.getProducts); // get all products - has pagination
-// TODO: add getProductsByCategory method + get route(`/products/category`)
+// TODO: router.get('/products/:id', ProductsController.getProductsIndex);
+// TODO: router.get('/products/category', ProductsController.getProductsByCategory);
+// TODO: router.get('/products/category/:id', ProductsController.getProductsIndexByCategory);
 // Users routes
 router.post('/users', UsersController.postUser); // data = { email: string, password: string }
 router.get('/users/me', UsersController.getMe); // get authenticated user info

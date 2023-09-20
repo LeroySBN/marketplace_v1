@@ -19,60 +19,67 @@ export interface User extends BaseObject {
 
 class UsersController {
   static async postUser(req: Request, res: Response): Promise<Response | void> {
-    const { email, password, firstName, lastName } = req.body;
+    try {
+      const { email, password, firstName, lastName } = req.body;
 
-    if (!email) {
-      return res.status(400).json({ error: 'Missing email' });
-    }
-
-    if (!password) {
-      return res.status(400).json({ error: 'Missing password' });
-    }
-
-    const user: User = {
-      id: uuidv4(),
-      dateCreated: new Date().toISOString(),
-      email,
-      password: sha1(password),
-      firstName,
-      lastName,
-    };
-
-    const users = await mongoClient.db.collection('users');
-
-    users.findOne({ email: user.email }, (err: Error, user: User): any => {
-      if (user) {
-        return res.status(400).json({ error: 'Already exists' });
-      } else {
-        users.insertOne(user)
-        .then(() => {
-          return res.status(201).json(user);
-        })
-        .catch((error: Error) => {
-          console.error(error);
-          return res.status(400).json({ error: error.message });
-        });
+      if (!email) {
+        return res.status(400).json({ error: 'Missing email' });
       }
-    });
+
+      if (!password) {
+        return res.status(400).json({ error: 'Missing password' });
+      }
+
+      const user: User = {
+        _id: uuidv4(),
+        dateCreated: new Date().toISOString(),
+        email,
+        password: sha1(password),
+        firstName,
+        lastName,
+        cart: [],
+        
+      };
+
+      const users = mongoClient.db.collection('users');
+      const result = await users.findOne({email}) ;
+
+      if (result) {
+        return res.status(400).json({ error: 'Already exists' });
+      }
+
+      await users.insertOne(user)
+      .then(() => {
+        return res.status(201).json(user);
+      })
+      .catch((error: Error) => {
+        console.error(error);
+        return res.status(400).json({ error: error.message });
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
   }
 
   static async getMe(req: Request, res: Response): Promise<Response | void> {
-    const token = req.header('X-Token');
-    const userId = await redisClient.get(`auth_${token}`);
+    try {
+      const token = req.header('X-Token');
+      const userId = await redisClient.get(`auth_${token}`);
 
-    if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    const users = await mongoClient.db.collection('users');
-
-    users.findOne({ id: new ObjectId(userId) }, (err: Error, user: User): any => {
-      if (user) {
-        return res.status(200).json(user);
-      } else {
-        return res.status(404).json({ error: 'Not found' });
+      if (userId) {
+        const users = mongoClient.db.collection('users');
+        const user = await users.findOne({ _id: userId });
+        if (user) {
+          return res.status(200).json({ id: user._id, email: user.email });
+        }
       }
-    });
+      return res.status(401).json({ error: 'Unauthorized' });
+
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
   }
 
   static async putUserCart(req: Request, res: Response): Promise<Response | void> {
@@ -86,7 +93,7 @@ class UsersController {
 
     const users = await mongoClient.db.collection('users');
 
-    users.findOne({ id: new ObjectId(userId) }, (err: Error, user: User): any => {
+    users.findOne({ _id: new ObjectId(userId) }, (err: Error, user: User): any => {
       if (!user) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
@@ -95,7 +102,7 @@ class UsersController {
       }
       // if product id and quantity are provided, add to cart or update quantity
       if (productId && quantity) {
-        const product = mongoClient.db.collection('products').findOne({ id: new ObjectId(productId) });
+        const product = mongoClient.db.collection('products').findOne({ _id: new ObjectId(productId) });
         // check if product exists
         if (!product) {
           return res.status(404).json({ error: 'Product not available' });
@@ -110,7 +117,7 @@ class UsersController {
         }
         if (quantity <= product.stock) {
           const cartItem: CartItem = {
-            id: uuidv4(),
+            _id: uuidv4(),
             dateCreated: new Date().toISOString(),
             productId,
             quantity,
@@ -143,7 +150,7 @@ class UsersController {
 
     const users = await mongoClient.db.collection('users');
 
-    users.findOne({ id: new ObjectId(userId) }, (err: Error, user: User): any => {
+    users.findOne({ _id: new ObjectId(userId) }, (err: Error, user: User): any => {
       if (!user) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
@@ -174,7 +181,7 @@ class UsersController {
 
     const users = await mongoClient.db.collection('users');
 
-    users.findOne({ id: new ObjectId(userId) }, (err: Error, user: User): any => {
+    users.findOne({ _id: new ObjectId(userId) }, (err: Error, user: User): any => {
       if (!user) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
@@ -182,12 +189,12 @@ class UsersController {
       if (cart) {
         const products = mongoClient.db.collection('products');
         const productsInCart = cart.map((item) => item.productId);
-        products.find({ id: { $in: productsInCart } }).toArray((err: Error, products: Product[]): any => {
+        products.find({ _id: { $in: productsInCart } }).toArray((err: Error, products: Product[]): any => {
           if (products) {
             const checkout = products.map((product) => {
-              const productInCart = cart.find((item) => item.productId === product.id);
+              const productInCart = cart.find((item) => item.productId === product._id);
               return {
-                productId: product.id,
+                productId: product._id,
                 name: product.name,
                 quantity: productInCart?.quantity,
                 unitPrice: product.price,
@@ -215,7 +222,7 @@ class UsersController {
 
     const users = await mongoClient.db.collection('users');
 
-    users.findOne({ id: new ObjectId(userId) }, (err: Error, user: User): any => {
+    users.findOne({ _id: new ObjectId(userId) }, (err: Error, user: User): any => {
       if (!user) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
@@ -230,7 +237,7 @@ class UsersController {
         if (cart) {
           const products = mongoClient.db.collection('products');
           const productsInCart = cart.map((item) => item.productId);
-          products.find({ id: { $in: productsInCart } }).toArray((err: Error, products: Product[]): any => {
+          products.find({ _id: { $in: productsInCart } }).toArray((err: Error, products: Product[]): any => {
             if (products) {
               const productsOutOfStock = products.filter((product) => product.stock === 0);
 
@@ -242,7 +249,7 @@ class UsersController {
 
               if (productsInStock.length > 0) {
                 productsInStock.forEach((product) => {
-                  const productInCart = cart.find((item) => item.productId === product.id);
+                  const productInCart = cart.find((item) => item.productId === product._id);
                   if (productInCart) {
                     product.stock -= productInCart.quantity;
                   }
@@ -252,7 +259,7 @@ class UsersController {
               const orders = mongoClient.db.collection('orders');
 
               const order: OrderItem = {
-                id: uuidv4(),
+                _id: uuidv4(),
                 dateCreated: new Date().toISOString(),
                 userId,
                 status: 'pending',
@@ -289,7 +296,7 @@ class UsersController {
 
     const users = await mongoClient.db.collection('users');
 
-    users.findOne({ id: new ObjectId(userId) }, (err: Error, user: User): any => {
+    users.findOne({ _id: new ObjectId(userId) }, (err: Error, user: User): any => {
       if (!user) {
         return res.status(401).json({ error: 'Unauthorized' });
       }

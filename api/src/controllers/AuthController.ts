@@ -6,25 +6,35 @@ import redisClient from '../utils/redis';
 
 class AuthController {
   static async getConnect(req: Request, res: Response): Promise<Response | void> {
-    const auth = req.header('Authorization')?.split(' ')[1];
+    try {
+      const auth = req.header('Authorization')?.split(' ')[1];
 
-    if (!auth) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
+      if (!auth) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
 
-    const credentials = Buffer.from(auth, 'base64').toString('utf-8').split(':');
+      const credentials = Buffer.from(auth, 'base64').toString('utf-8').split(':');
 
-    if (credentials.length !== 2) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
+      if (credentials.length !== 2) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
 
-    const email = credentials[0];
-    const password = sha1(credentials[1]);
+      const email = credentials[0];
+      const password = sha1(credentials[1]);
 
-    const users = await mongoClient.db.collection('users');
+      const vendors = mongoClient.db.collection('vendors');
+      const users = mongoClient.db.collection('users');
 
-    users.findOne({ email, password }, (err: Error, user: any): any => {
-      if (user) {
+      const vendor = await vendors.findOne({ email, password });
+      const user = await users.findOne({ email, password });
+
+      if (vendor) {
+        const token = uuidv4();
+
+        redisClient.set(`auth_${token}`, vendor._id.toString(), 86400);
+
+        return res.status(200).json({ token });
+      } else if (user) {
         const token = uuidv4();
 
         redisClient.set(`auth_${token}`, user._id.toString(), 86400);
@@ -33,7 +43,10 @@ class AuthController {
       } else {
         return res.status(401).json({ error: 'Unauthorized' });
       }
-    });
+    } catch (err) {
+      console.log(err);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
   }
 
   static async getDisconnect(req: Request, res: Response): Promise<Response | void> {

@@ -1,4 +1,4 @@
 export interface BaseObject {
-  readonly id: string;
+  readonly _id: string;
   readonly dateCreated: string;
 }

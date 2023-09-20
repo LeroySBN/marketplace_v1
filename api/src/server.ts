@@ -23,7 +23,7 @@ app.use('/', router);
 
 // Specify the port to listen on
 const host = process.env.HOST || '0.0.0.0';
-const port = parseInt(process.env.PORT || '5000', 10);
+const port = parseInt(process.env.PORT || '8000', 10);
 
 const server = http.createServer(app);
 

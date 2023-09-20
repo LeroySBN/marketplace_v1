@@ -66,6 +66,15 @@ class MongoDBClient {
     const orderCount = await ordersCollection.countDocuments();
     return orderCount;
   }
+
+  async nbDeliveries() {
+    if (!this.isAlive()) {
+      return -1;
+    }
+    const deliveriesCollection = this.db.collection('deliveries');
+    const deliveryCount = await deliveriesCollection.countDocuments();
+    return deliveryCount;
+  }
 }
 
 const mongoClient = new MongoDBClient();

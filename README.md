@@ -15,7 +15,7 @@
 
 ## Description
 
-This project is a template for building microservices using Flask, TypeScript, Express.js, MongoDB, and Redis. It includes basic functionality such as user authentication, vendor management, product management, and more. Developers can use this project as a starting point to build custom web applications tailored to their needs.
+This project is a template for building microservices using Flask, TypeScript, Express.js, MongoDB, and Redis. It includes basic functionality such as user authentication, vendor management, product management, and more.
 
 ## Requirements
 

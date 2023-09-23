@@ -1,7 +1,4 @@
 # ALX Specialization Project
-
-This is a TypeScript-based API project that serves as a foundation for building a web application. This README provides an overview of the project, its requirements, and instructions for running and contributing to it.
-
 ## Table of Contents
 
 - [Description](#description)
@@ -14,25 +11,28 @@ This is a TypeScript-based API project that serves as a foundation for building 
 
 ## Description
 
-This project is a template for building web applications using TypeScript, Express.js, MongoDB, and Redis. It includes basic functionality such as user authentication, vendor management, product management, and more. Developers can use this project as a starting point to build custom web applications tailored to their needs.
+This project is a template for building microservices using Flask, TypeScript, Express.js, MongoDB, and Redis. It includes basic functionality such as user authentication, vendor management, product management, and more. Developers can use this project as a starting point to build custom web applications tailored to their needs.
 
 ## Requirements
 
 Before you begin, ensure you have met the following requirements:
 
+- **Python**: You need Python3 to run the socialplace api. WE recomment using version 3.8.10
 - **Node.js**: You need Node.js to run the application. We recommend using version 18.17.1 or later.
 - **MongoDB**: The project relies on MongoDB as its database system. Make sure you have MongoDB installed; we recommend using version 7.0.1.
 - **Redis**: Redis is used for caching and session management. Ensure you have Redis installed, preferably version 6.0.16.
 
-## Getting Started
+## Marketplace API
+
+### Getting Started
 
 Follow these steps to get the project up and running on your local machine:
 
 1. Clone the repository:
 
   ```bash
-  git clone <repository-url>
-  cd alx-specialization_project
+  git clone https://github.com/leroysb/alx-specialization_project.git
+  cd alx-specialization_project/marketplace_microservice
   ```
 
 2. Install project dependencies
@@ -44,11 +44,13 @@ Follow these steps to get the project up and running on your local machine:
   Create a **.env** file in the project root and configure the following environment variables as needed:
 
   ```
-  HOST='0.0.0.0'
-  PORT=8000
-  MONGODB_HOST=localhost
+  SOCIALPLACE_API_HOST='0.0.0.0'
+  SOCIALPLACE_API_PORT=8080
+  MARKETPLACE_API_HOST='0.0.0.0'
+  MARKETPLACE_API_PORT=5000
+  MONGODB_HOST='localhost'
   MONGODB_PORT=27017
-  MONGODB_DATABASE=procurement_ms
+  MONGODB_DATABASE='miniapps'
   REDIS_HOST=localhost
   REDIS_PORT=6379
   REDIS_DB=0
@@ -58,9 +60,9 @@ Follow these steps to get the project up and running on your local machine:
 
   `npm start`
 
-## Usage
+### Usage
 
-The project includes various [routes](./api/src/routes/index.ts) and [controllers](./api/src/controllers/) for different features. You can customize and expand upon these features to build your web application. Here are some of the key routes:
+The project includes various routes and controllers for different features. You can customize and expand upon these features to build your web application. Here are some of the key routes:
 
 * `/status`: Check the status of the server.
 * `/vendors`: Create a new vendor account.
@@ -69,7 +71,9 @@ The project includes various [routes](./api/src/routes/index.ts) and [controller
 * `/users`: Create a new user account.
 * `/users/me`: Retrieve information about the currently logged-in user.
 
-Feel free to explore the controllers and routes in the project's code to understand how they work and customize them to fit your application's requirements.
+Feel free to explore the [controllers](./marketplace_microservice/api/v1/src/controllers/) and [routes](./marketplace_microservice/api/v1/src/routes/) in the project's code to understand how they work and customize them to fit your application's requirements.
+
+### Socialplace API
 
 ## Contributing
 

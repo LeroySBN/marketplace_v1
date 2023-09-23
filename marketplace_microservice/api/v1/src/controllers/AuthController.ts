@@ -31,13 +31,13 @@ class AuthController {
       const user = await users.findOne({ email, password });
 
       if (vendor) {
-        const token = uuidv4();
+        let token = uuidv4();
 
         redisClient.set(`auth_${token}`, vendor._id.toString(), 86400);
 
         return res.status(200).json({ token });
       } else if (user) {
-        const token = uuidv4();
+        let token = uuidv4();
 
         redisClient.set(`auth_${token}`, user._id.toString(), 86400);
 

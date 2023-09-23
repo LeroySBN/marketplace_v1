@@ -5,7 +5,6 @@ import sha1 from 'sha1';
 import { UserObj, VendorObj, ProductObj, CartObj, OrderObj, productDeliveryObj, DeliveryObj } from './main';
 import mongoClient from '../utils/mongo';
 import redisClient from '../utils/redis';
-import { count } from 'console';
 
 
 class UsersController {

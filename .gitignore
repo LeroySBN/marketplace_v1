@@ -2,6 +2,11 @@
 .idea/
 *~
 
+# Python files and folders
+__pycache__/
+versions/
+*env/
+
 # Logs
 logs
 *.log

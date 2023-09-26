@@ -21,6 +21,7 @@ This project is a template for building microservices using Flask, TypeScript, E
 
 Before you begin, ensure you have met the following requirements:
 
+- **Linux**
 - **Python**: You need Python3 to run the socialplace api. WE recomment using version 3.8.10
 - **Node.js**: You need Node.js to run the application. We recommend using version 18.17.1 or later.
 - **MongoDB**: The project relies on MongoDB as its database system. Make sure you have MongoDB installed; we recommend using version 7.0.1.

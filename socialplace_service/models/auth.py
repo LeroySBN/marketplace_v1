@@ -1,97 +1,65 @@
-#!/usr/bin/env python3
-""" auth module """
-import bcrypt
-from db import DB
-from user import User
+from flask import jsonify, request
+from models.engine.redis_storage import storage as redis_storage
+from bcrypt import hashpw, gensalt
+from hashlib import sha1
+import mongoClient  # Import your MongoDB client module
 import uuid
-from typing import Union
-
-
-def _hash_password(password: str) -> bytes:
-    """ hash password """
-    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-
-
-def _generate_uuid() -> str:
-    """ generate uuid """
-    return str(uuid.uuid4())
 
 
 class Auth:
-    """Auth class to interact with the authentication database.
     """
-
-    def __init__(self):
-        """ initialize
+    This class manages the API authentication
+    """
+    @staticmethod
+    def get_connect():
         """
-        self._db = DB()
-
-    def register_user(self, email: str, password: str) -> User:
-        """ Registers a user instance
+        Authenticates a user and creates a session
         """
         try:
-            self._db.find_user_by(email=email)
-        except Exception:
-            self._db.add_user(email, _hash_password(password))
-            return self._db.find_user_by(email=email)
-        raise ValueError(f'User {email} already exists')
+            auth = request.headers.get('Authorization')
 
-    def valid_login(self, email: str, password: str) -> bool:
-        """ valid login
-        """
-        try:
-            user = self._db.find_user_by(email=email)
-            return bcrypt.checkpw(password.encode('utf-8'),
-                                  user.hashed_password)
-        except Exception:
-            return False
+            if not auth:
+                return jsonify(error='Unauthorized'), 401
 
-    def create_session(self, email: str) -> str:
-        """ create session
-        """
-        user = self._db.find_user_by(email=email)
-        if user:
-            session_id = _generate_uuid()
-            self._db.update_user(user.id, session_id=session_id)
-            return session_id
-        else:
-            return None
+            credentials = auth.split(' ')[1].encode('utf-8')
+            credentials = credentials.decode('base64')
 
-    def get_user_from_session_id(self, session_id: str) -> Union[User, None]:
-        """ get user from session id
-        """
-        if session_id is None:
-            return None
-        #
-        try:
-            user = self._db.find_user_by(session_id=session_id)
-        except Exception:
-            return None
-        return user
+            if len(credentials.split(':')) != 2:
+                return jsonify(error='Unauthorized'), 401
 
-    def destroy_session(self, user_id: int) -> None:
-        """ destroy session
-        """
-        self._db.update_user(user_id, session_id=None)
+            email, password = credentials.split(':')
+            password = sha1(password.encode()).hexdigest()
 
-    def get_reset_password_token(self, email: str) -> str:
-        """ reset password
-        """
-        try:
-            user = self._db.find_user_by(email=email)
-        except Exception:
-            raise ValueError
-        reset_token = _generate_uuid()
-        self._db.update_user(user.id, reset_token=reset_token)
-        return reset_token
+            vendors = mongoClient.db.collection('vendors')
+            users = mongoClient.db.collection('users')
 
-    def update_password(self, reset_token: str, password: str) -> None:
-        """ update password
+            vendor = vendors.find_one({'email': email, 'password': password})
+            user = users.find_one({'email': email, 'password': password})
+
+            if vendor:
+                token = str(uuid.uuid4())
+                redis_storage.set(f'auth_{token}', str(vendor['_id']), 86400)
+                return jsonify(token=token), 200
+            elif user:
+                token = str(uuid.uuid4())
+                redis_storage.set(f'auth_{token}', str(user['_id']), 86400)
+                return jsonify(token=token), 200
+            else:
+                return jsonify(error='Unauthorized'), 401
+        except Exception as e:
+            print(e)
+            return jsonify(error='Internal server error'), 500
+
+    @staticmethod
+    def get_disconnect():
         """
-        try:
-            user = self._db.find_user_by(reset_token=reset_token)
-        except Exception:
-            raise ValueError
-        self._db.update_user(user.id,
-                             hashed_password=_hash_password(password),
-                             reset_token=None)
+        Deletes a user session / logs out a user
+        """
+        token = request.headers.get('X-Token')
+        user_id = redis_storage.get(f'auth_{token}')
+
+        if not user_id:
+            return jsonify(error='Unauthorized'), 401
+
+        redis_storage.delete(f'auth_{token}')
+        return jsonify(), 204

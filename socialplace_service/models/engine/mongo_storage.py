@@ -13,8 +13,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-SOCIALPLACE_MONGO_HOST = getenv('SOCIALPLACE_MONGO_HOST')
-SOCIALPLACE_MONGO_DB = getenv('SOCIALPLACE_MONGO_DB')
+SOCIALPLACE_MONGO_HOST = getenv('SOCIALPLACE_MONGO_HOST', 'localhost')
+SOCIALPLACE_MONGO_PORT = getenv('SOCIALPLACE_MONGO_PORT', 27017)
+SOCIALPLACE_MONGO_DB = getenv('SOCIALPLACE_MONGO_DB', 'socialplace')
 SOCIALPLACE_ENV = getenv('SOCIALPLACE_ENV')
 
 
@@ -29,7 +30,7 @@ class MongoStorage:
         """
         Instantiates DBStorage
         """
-        self.__client = MongoClient('mongodb://{}:27017/'.format(SOCIALPLACE_MONGO_HOST))
+        self.__client = MongoClient('mongodb://{}:{}/'.format(SOCIALPLACE_MONGO_HOST, SOCIALPLACE_MONGO_PORT))
         self.__db = self.__client[SOCIALPLACE_MONGO_DB]
 
     def status(self):
@@ -63,12 +64,6 @@ class MongoStorage:
         serialized_obj = obj.to_dict()
         self.__db[collection_name].insert_one(serialized_obj)
 
-    def save(self):
-        """
-        This method does nothing in MongoDB since documents are saved automatically
-        """
-        pass
-
     def delete(self, obj=None):
         """
         Deletes a document from the MongoDB
@@ -77,18 +72,24 @@ class MongoStorage:
             collection_name = obj.__class__.__name__
             self.__db[collection_name].delete_one({'_id': obj._id})
 
-    def reload(self):
+    def update(self, cls, query, update_data):
         """
-        Reloads data from the MongoDB (no-op for MongoDB)
+        Updates a single document that matches the query with the provided update_data.
         """
-        pass
+        collection_name = cls.__name__
+        self.__db[collection_name].update_one(query, update_data)
 
-    def get(self, cls, id):
+    def get(self, cls, id=None, email=None):
         """
         Retrieves a document by its ID from the MongoDB
         """
         collection_name = cls.__name__
-        document = self.__db[collection_name].find_one({'_id': id})
+
+        if id:
+            document = self.__db[collection_name].find_one({'_id': id})
+        elif email:
+            document = self.__db[collection_name].find_one({'email': email})
+
         if document:
             return cls(**document)
         else:

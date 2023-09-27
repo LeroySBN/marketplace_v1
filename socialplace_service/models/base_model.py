@@ -12,9 +12,6 @@ Base = object
 
 class BaseModel:
     """A base class for all hbnb models"""
-    _id = ""
-    dateCreated = datetime.utcnow
-    dateUpdated = datetime.utcnow
 
     def __init__(self, *args, **kwargs):
         """Instantiates a new model"""
@@ -37,7 +34,6 @@ class BaseModel:
         """Updates updated_at with current time when instance is changed"""
         self.dateUpdated = datetime.now()
         models.storage.new(self)
-        models.storage.save()
 
     def to_dict(self):
         """Convert instance into dict format"""

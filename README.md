@@ -3,10 +3,13 @@
 
 - [Description](#description)
 - [Requirements](#requirements)
-- [Marketplace API](#marketplace-api)
+- [Authentication Service](#authentication-service)
   - [Getting Started](#getting-started)
   - [Usage](#usage)
-- [Socialplace API](#socialplace-api)
+- [Marketplace Service](#marketplace-service)
+  - [Getting Started](#getting-started)
+  - [Usage](#usage)
+- [Socialplace Service](#socialplace-service)
   - [Getting Started](#getting-started-1)
   - [Usage](#usage-1)
 - [Contributing](#contributing)
@@ -21,17 +24,22 @@ This project is a template for building microservices using Flask, TypeScript, E
 
 Before you begin, ensure you have met the following requirements:
 
-- **Linux**
-- **Python**: You need Python3 to run the socialplace api. WE recomment using version 3.8.10
+- **Linux**: We recommend using Ubuntu 22.04 for this project.
+- **Python**: You need Python3 to run the application. We recommend using version 3.8.10 or later.
 - **Node.js**: You need Node.js to run the application. We recommend using version 18.17.1 or later.
-- **MongoDB**: The project relies on MongoDB as its database system. Make sure you have MongoDB installed; we recommend using version 7.0.1.
+- **MySQL**: The project relies on MySQL as its primary database system. Make sure you have MongoDB installed; we recommend using version 8.0.
+- **MongoDB**: The project relies on MongoDB as its secondary database system. Make sure you have MongoDB installed; we recommend using version 7.0.1.
 - **Redis**: Redis is used for caching and session management. Ensure you have Redis installed, preferably version 6.0.16.
 
-## Socialplace API
+## Authentication Service
 ### Getting Started
 ### Usage
 
-## Marketplace API
+## Socialplace Service
+### Getting Started
+### Usage
+
+## Marketplace Service
 
 ### Getting Started
 
@@ -53,13 +61,12 @@ Follow these steps to get the project up and running on your local machine:
   Create a **.env** file in the project root and configure the following environment variables as needed:
 
   ```
-  SOCIALPLACE_API_HOST='0.0.0.0'
-  SOCIALPLACE_API_PORT=8080
-  MARKETPLACE_API_HOST='0.0.0.0'
-  MARKETPLACE_API_PORT=5000
-  MONGODB_HOST='localhost'
-  MONGODB_PORT=27017
-  MONGODB_DATABASE='miniapps'
+  MARKETPLACE_ENV = 'dev'
+  MARKETPLACE_API_HOST = 'localhost'
+  MARKETPLACE_API_PORT = '5000'
+  MONGODB_HOST = 'localhost'
+  MONGODB_PORT = '27017'
+  MONGODB_DATABASE = 'marketplace_dev_db'
   REDIS_HOST=localhost
   REDIS_PORT=6379
   REDIS_DB=0
@@ -77,12 +84,8 @@ The project includes various routes and controllers for different features. You 
 * `/vendors`: Create a new vendor account.
 * `/vendors/me`: Retrieve information about the currently logged-in vendor.
 * `/products`: Get a list of products.
-* `/users`: Create a new user account.
-* `/users/me`: Retrieve information about the currently logged-in user.
 
 Feel free to explore the [controllers](./marketplace_microservice/api/v1/src/controllers/) and [routes](./marketplace_microservice/api/v1/src/routes/) in the project's code to understand how they work and customize them to fit your application's requirements.
-
-### Socialplace API
 
 ## Contributing
 

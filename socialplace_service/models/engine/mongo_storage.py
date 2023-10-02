@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 """
-mysql_storage module
+mongo_storage module
 """
 from os import getenv
 import models

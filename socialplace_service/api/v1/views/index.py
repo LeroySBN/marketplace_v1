@@ -1,72 +1,44 @@
-#!/usr/bin/python3
-""" Index """
-from models.user import User
-from models.community import Community
-from models.post import Post
-from models import storage
-from models.engine.redis_storage import storage as redis_storage
+#!/usr/bin/env python3
+""" Module of Index views
+"""
+from flask import jsonify, abort
 from api.v1.views import app_views
-from flask import jsonify
 
 
 @app_views.route('/status', methods=['GET'], strict_slashes=False)
-def status():
-    """ Status of API """
-    return jsonify({'api_status': 'OK', 'mongodb': storage.status()})
-
-
-@app_views.route('/stats', methods=['GET'], strict_slashes=False)
-def number_objects():
-    """ Retrieves the number of documents for each object type """
-    classes = [User, Community, Post]  # Add all your model classes here
-    names = ["users", "communities", "posts"]  # Add corresponding names
-
-    num_objs = {}
-    for i in range(len(classes)):
-        count = storage.count(classes[i])
-        num_objs[names[i]] = count
-
-    return jsonify(num_objs)
-
-
-@app_views.route('/connect', methods=['POST'], strict_slashes=False)
-def connect_user():
+def status() -> str:
+    """ GET /api/v1/status
+    Return:
+      - the status of the API
     """
-    Log in a user
+    return jsonify({"status": "OK"})
+
+
+@app_views.route('/stats/', strict_slashes=False)
+def stats() -> str:
+    """ GET /api/v1/stats
+    Return:
+      - the number of each objects
     """
-    data = request.get_json()
-    if not data:
-        return jsonify(error="Not a JSON"), 400
-    if 'email' not in data or 'password' not in data:
-        return jsonify(error="Missing email or password"), 400
+    from models.user import User
+    stats = {}
+    stats['users'] = User.count()
+    return jsonify(stats)
 
-    email = data['email']
-    password = data['password']
 
-    # Verify the email and password (e.g., from your MongoDB or any other database)
-    user = storage.get(User, email=email)
-    if user and checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
-        # User is authenticated
-        token = redis_storage.set_user_session(email)
-        return jsonify(success="User logged in", token=token), 200
-    else:
-        return jsonify(error="Invalid email or password"), 401
-
-@app_views.route('/disconnect', methods=['DELETE'], strict_slashes=False)
-def disconnect_user():
+@app_views.route('/unauthorized', methods=['GET'], strict_slashes=False)
+def unallowed() -> str:
+    """ GET /api/v1/unauthorized
+    Return:
+      - abort 401
     """
-    Log out a user
-    """
-    auth_header = request.headers.get('Authorization')
-    if not auth_header:
-        return jsonify(error="Missing Authorization header"), 401
+    abort(401)
 
-    token = auth_header.split()[-1]
-    email = redis_storage.get_user_session(token)
-    
-    if email:
-        # User is authenticated, log them out
-        redis_storage.delete_user_session(token)
-        return jsonify(success="User logged out"), 200
-    else:
-        return jsonify(error="Invalid or expired token"), 401
+
+@app_views.route('/forbidden', methods=['GET'], strict_slashes=False)
+def forbidden() -> str:
+    """ GET /api/v1/forbidden
+    Return:
+      - abort 403
+    """
+    abort(403)

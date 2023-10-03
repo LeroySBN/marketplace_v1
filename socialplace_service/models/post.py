@@ -1,10 +1,10 @@
 #!/usr/bin/python3
 """ Post module """
-from models.base_model import BaseModel, Base
+from models.base import BaseModel
 from os import getenv
 
 
-class Post(BaseModel, Base):
+class Post(BaseModel):
     """This class defines a user by various attributes"""
     userId = ""
     communityId = ""

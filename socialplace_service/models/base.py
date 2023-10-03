@@ -12,7 +12,7 @@ TIMESTAMP_FORMAT = "%Y-%m-%dT%H:%M:%S"
 DATA = {}
 
 
-class Base():
+class BaseModel():
     """ Base class
     """
 
@@ -57,6 +57,20 @@ class Base():
                 result[key] = value
         return result
 
+    def to_dict(self):
+        """
+        Convert the User object to a dictionary
+        """
+        user_dict = {
+            'created_at': self.created_at.strftime(TIMESTAMP_FORMAT),
+            'updated_at': self.updated_at.strftime(TIMESTAMP_FORMAT),
+            'email': self.email,
+            'password': self._password,  # Ensure it's included if needed
+            'first_name': self.first_name,
+            'last_name': self.last_name
+        }
+        return user_dict
+
     @classmethod
     def load_from_file(cls):
         """ Load all objects from file
@@ -84,6 +98,16 @@ class Base():
 
         with open(file_path, 'w') as f:
             json.dump(objs_json, f)
+    
+    @classmethod
+    def save_to_mongo(cls, obj):
+        from models import mongo_storage
+        s_class = cls.__name__
+        if hasattr(mongo_storage, 'db'):
+            collection = mongo_storage.db[s_class]
+            obj_dict = obj.to_dict()
+            obj_dict['_id'] = obj.id  # Add the ID to the document
+            collection.replace_one({'_id': obj.id}, obj_dict, upsert=True)
 
     def save(self):
         """ Save current object
@@ -91,7 +115,8 @@ class Base():
         s_class = self.__class__.__name__
         self.updated_at = datetime.utcnow()
         DATA[s_class][self.id] = self
-        self.__class__.save_to_file()
+        # self.__class__.save_to_file()
+        self.__class__.save_to_mongo(self)
 
     def remove(self):
         """ Remove object

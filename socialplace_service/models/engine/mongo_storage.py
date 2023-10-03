@@ -4,7 +4,7 @@ mongo_storage module
 """
 from os import getenv
 import models
-from models.base_model import Base
+from models.base import BaseModel
 from models.user import User
 from models.community import Community
 from models.post import Post
@@ -32,6 +32,7 @@ class MongoStorage:
         """
         self.__client = MongoClient('mongodb://{}:{}/'.format(SOCIALPLACE_MONGO_HOST, SOCIALPLACE_MONGO_PORT))
         self.__db = self.__client[SOCIALPLACE_MONGO_DB]
+        self.db = self.__db
 
     def status(self):
         """
@@ -51,7 +52,7 @@ class MongoStorage:
         Querys the MongoDB for documents of the specified class
         """
         if cls is None:
-            cls = Base
+            cls = BaseModel
         collection_name = cls.__name__
         documents = self.__db[collection_name].find()
         return {"{}.{}".format(collection_name, doc['_id']): doc for doc in documents}
@@ -100,7 +101,7 @@ class MongoStorage:
         Counts the number of documents in the MongoDB for the specified class
         """
         if cls is None:
-            cls = Base
+            cls = BaseModel
         collection_name = cls.__name__
         count = self.__db[collection_name].count_documents({})
         return count if count > 0 else 0

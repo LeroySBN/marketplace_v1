@@ -7,6 +7,9 @@ from api.v1.views import app_views
 from flask import Flask, jsonify, abort, request
 from flask_cors import (CORS, cross_origin)
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 app = Flask(__name__)
@@ -14,7 +17,7 @@ app.register_blueprint(app_views)
 CORS(app, resources={r"/api/v1/*": {"origins": "*"}})
 
 auth = None
-auth_type = getenv("SOCIALPLACE_AUTH_TYPE", "auth")
+auth_type = getenv("SOCIALPLACE_AUTH_TYPE", "basic_auth")
 
 if auth_type == 'session_db_auth':
     from api.v1.auth.session_db_auth import SessionDBAuth
@@ -41,6 +44,8 @@ def require_auth() -> str:
         return None
     #
     excluded_paths = ['/api/v1/status/',
+                      '/api/v1/stats/',
+                      '/api/v1/users/',
                       '/api/v1/unauthorized/',
                       '/api/v1/forbidden/',
                       '/api/v1/auth_session/login/']
@@ -50,6 +55,7 @@ def require_auth() -> str:
             if not auth.authorization_header(request) \
                     and not auth.session_cookie(request):
                 abort(401)
+            request.current_user = auth.current_user(request)
             #
             if not auth.current_user(request):
                 abort(403)
@@ -57,7 +63,6 @@ def require_auth() -> str:
             if not auth.session_cookie(request):
                 abort(401)
             #
-            request.current_user = auth.current_user(request)
             if not request.current_user \
                     and auth.require_auth(request.path, excluded_paths):
                 abort(403)

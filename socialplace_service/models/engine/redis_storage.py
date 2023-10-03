@@ -2,14 +2,6 @@ import redis
 from redis.exceptions import RedisError
 from typing import Optional
 from os import getenv
-from dotenv import load_dotenv
-
-load_dotenv()
-
-REDIS_HOST = getenv('REDIS_HOST', 'localhost')
-REDIS_PORT = getenv('REDIS_PORT', 6379)
-REDIS_PASSWORD = getenv('REDIS_PASSWORD', None)
-REDIS_DB = getenv('REDIS_DB', 0)
 
 
 class RedisClient:
@@ -22,7 +14,7 @@ class RedisClient:
             decode_responses=True
         )
 
-    def is_alive(self):
+    def status(self):
         try:
             return self.client.ping()
         except RedisError:
@@ -37,5 +29,3 @@ class RedisClient:
     def delete(self, key: str):
         self.client.delete(key)
 
-
-storage = RedisClient(REDIS_HOST, REDIS_PORT, REDIS_PASSWORD, REDIS_DB)

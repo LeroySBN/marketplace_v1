@@ -3,6 +3,7 @@
 """
 from flask import jsonify, abort
 from api.v1.views import app_views
+from models import mongo_storage, redis_storage
 
 
 @app_views.route('/status', methods=['GET'], strict_slashes=False)
@@ -11,7 +12,11 @@ def status() -> str:
     Return:
       - the status of the API
     """
-    return jsonify({"status": "OK"})
+    return jsonify({
+      'api_status': 'OK',
+      'mongodb_status': mongo_storage.status(),
+      'redis_status': redis_storage.status()
+    })
 
 
 @app_views.route('/stats/', strict_slashes=False)

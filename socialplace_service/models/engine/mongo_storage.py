@@ -87,13 +87,18 @@ class MongoStorage:
         collection_name = cls.__name__
 
         if id:
+            print(f"Searching for document with ID: {id}")
             document = self.__db[collection_name].find_one({'_id': id})
         elif email:
+            print(f"Searching for document with email: {email}")
             document = self.__db[collection_name].find_one({'email': email})
 
         if document:
+            print("Document found:")
+            print(document)
             return cls(**document)
         else:
+            print("Document not found")
             return None
 
     def count(self, cls=None):

@@ -53,7 +53,9 @@ class BasicAuth(Auth):
                 user_pwd is None or type(user_pwd) is not str:
             return None
         try:
-            users = User.search({'email': user_email})
+            # users = User.search({'email': user_email})
+            print('basic_auth: searching mongo')
+            users = User.search_mongo({'email': user_email})
         except Exception:
             return None
         for user in users:

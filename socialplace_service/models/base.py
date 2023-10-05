@@ -160,3 +160,10 @@ class BaseModel():
             return True
         
         return list(filter(_search, DATA[s_class].values()))
+
+    @classmethod
+    def search_mongo(cls, attributes: dict = {}):
+        from models import mongo_storage
+        s_class = cls.__name__
+        result = mongo_storage.get(s_class, **attributes)
+        return result

@@ -45,27 +45,32 @@ def require_auth() -> str:
     #
     excluded_paths = ['/api/v1/status/',
                       '/api/v1/stats/',
-                      '/api/v1/users/',
                       '/api/v1/unauthorized/',
                       '/api/v1/forbidden/',
                       '/api/v1/auth_session/login/']
     #
     if request.path not in excluded_paths:
-        if auth.require_auth(request.path, excluded_paths):
-            if not auth.authorization_header(request) \
-                    and not auth.session_cookie(request):
-                abort(401)
-            request.current_user = auth.current_user(request)
-            #
-            if not auth.current_user(request):
-                abort(403)
-            #
-            if not auth.session_cookie(request):
-                abort(401)
-            #
-            if not request.current_user \
-                    and auth.require_auth(request.path, excluded_paths):
-                abort(403)
+        auth_header = auth.authorization_header(request)
+        session_cookie = auth.session_cookie(request)
+
+        # Check for Authorization header or session cookie
+        if not auth_header and not session_cookie:
+            abort(401)
+
+        # Retrieve the current user
+        request.current_user = auth.current_user(request)
+
+        # Check if the user is authenticated and authorized
+        if not request.current_user:
+            abort(403)
+
+        # Check for a session cookie if applicable
+        if not session_cookie:
+            abort(401)
+
+    # If the user is not authenticated and the path requires it, return 403
+    elif not request.current_user and auth.require_auth(request.path, excluded_paths):
+        abort(403)
 
 
 @app.errorhandler(401)

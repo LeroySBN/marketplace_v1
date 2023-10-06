@@ -19,7 +19,7 @@ app.use(cors({
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/v1', router);
+app.use('/api/v1', router);
 
 // Specify the port to listen on
 const host = process.env.MARKETPLACE_API_HOST || '0.0.0.0';

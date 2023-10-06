@@ -19,7 +19,7 @@ module.exports = {
   },
   overrides: [
     {
-      files: ["api/src/**/*.ts"],
+      files: ["api/v1/src/**/*.ts"],
       extends: [
         "plugin:@typescript-eslint/recommended",
         "prettier/@typescript-eslint",

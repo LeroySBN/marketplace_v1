@@ -72,7 +72,7 @@ class UsersController {
     }
   }
 
-  static async putUserCart(req: Request, res: Response): Promise<Response | void> {
+  static async postUserCart(req: Request, res: Response): Promise<Response | void> {
     try {
       const token = req.header('X-Token');
       const userId = await redisClient.get(`auth_${token}`);
@@ -84,7 +84,8 @@ class UsersController {
       const user =  await mongoClient.db.collection('users').findOne({ _id: userId });
       
       if (user) {
-        const { productId, quantity } = req.body;
+        const productId = req.body.id;
+        const quantity = req.body.quantity;
         
         if (!productId) {
           return res.status(400).json({ error: 'Missing productId' });
@@ -162,7 +163,7 @@ class UsersController {
       const user = await mongoClient.db.collection('users').findOne({ _id: userId });
       
       if (user) {
-        const { productId } = req.body;
+        const productId = req.params.id;
 
         if (!productId) {
           return res.status(400).json({ error: 'Missing productId' });

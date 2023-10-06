@@ -89,7 +89,7 @@ class VendorsController {
     }
   }
 
-  static async putVendorProduct(req: Request, res: Response): Promise<Response | void> {
+  static async postVendorProduct(req: Request, res: Response): Promise<Response | void> {
     try {
       const token = req.header('X-Token');
       const vendorId = await redisClient.get(`auth_${token}`);
@@ -100,6 +100,7 @@ class VendorsController {
   
         if (vendor) {
           const { name, description, price, imageUrl, stock, productId, location, banner } = req.body;
+          const idProduct = req.query.id as string;
           
           if (!stock) {
             return res.status(400).json({ error: 'Missing stock' });
@@ -171,6 +172,112 @@ class VendorsController {
           .then(() => {
             return res.status(200).json(product);
           })
+        } else {
+          return res.status(401).json({ error: 'Unauthorized' });
+        }
+      } else {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({ error: "Internal server error" });      
+    }
+  }
+
+  static async putVendorProduct(req: Request, res: Response): Promise<Response | void> {
+    try {
+      const token = req.header('X-Token');
+      const vendorId = await redisClient.get(`auth_${token}`);
+
+      if (vendorId) {
+        const vendors = mongoClient.db.collection('vendors');
+        const vendor = await vendors.findOne({ _id: vendorId});
+  
+        if (vendor) {
+          const { name, description, price, imageUrl, stock, location, banner } = req.body;
+          const productId = req.query.id as string;
+          
+          if (!Number.isInteger(stock) || stock < 1) {
+            return res.status(400).json({ error: 'Price should be a positive integer' });
+          }
+
+          const product = await mongoClient.db.collection('products').findOne({ _id: productId });
+
+          if (product) {
+            await vendor.products.map((product: ProductObj) => {
+              if (product._id === productId) {
+                product.name = name || product.name;
+                product.price = price || product.price;
+                product.stock = stock || product.stock;
+                product.imageUrl = imageUrl || product.imageUrl;
+                product.description = description || product.description;
+              }
+            });
+            
+            await vendors.updateOne({ _id: vendorId }, { $set: { products: vendor.products } });
+            console.log({ suucess: "Vendor's product list updated" });
+            
+
+            const products = mongoClient.db.collection('products');
+
+            const updatedProduct = await products.updateOne({ _id: productId }, { $set: {
+              name: name || product.name,
+              price: price || product.price,
+              stock : stock || product.stock,
+              imageUrl : imageUrl || product.imageUrl,
+              description: description || product.description,
+            }});
+
+            const result = await products.findOne({ _id: productId });
+
+            return res.status(200).json(result);
+          } else {
+            return res.status(404).json({ error: 'Not found' });
+          }
+        } else {
+          return res.status(401).json({ error: 'Unauthorized' });
+        }
+      } else {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({ error: "Internal server error" });      
+    }
+  }
+
+  static async delVendorProduct(req: Request, res: Response): Promise<Response | void> {
+    try {
+      const token = req.header('X-Token');
+      const vendorId = await redisClient.get(`auth_${token}`);
+
+      if (vendorId) {
+        const vendors = mongoClient.db.collection('vendors');
+        const vendor = await vendors.findOne({ _id: vendorId});
+  
+        if (vendor) {
+          const productId = req.params.id;
+
+          const product = await mongoClient.db.collection('products').findOne({ _id: productId });
+
+          if (product) {
+            await vendor.products.map((product: ProductObj) => {
+              if (product._id === productId) {
+                vendor.products.splice(vendor.products.indexOf(product), 1);
+              }
+            });
+            
+            await vendors.updateOne({ _id: vendorId }, { $set: { products: vendor.products } });
+            console.log({ suucess: "Vendor's product list updated" });
+            
+            await mongoClient.db.collection('products').deleteOne({ _id: productId });
+
+            return res.status(204).json({ success: "Product deleted" });
+          } else {
+            return res.status(404).json({ error: 'Not found' });
+          }
         } else {
           return res.status(401).json({ error: 'Unauthorized' });
         }

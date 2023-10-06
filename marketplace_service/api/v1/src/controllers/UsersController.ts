@@ -35,12 +35,7 @@ class UsersController {
       const result = await users.findOne({email}) ;
 
       if (result) {
-        const authKey = Buffer.from(`${email}:${password}`).toString('base64');
-        return res.status(400).json({ 
-          error: `Already exists`,
-          Authentication: `Basic ${authKey}`, // Remove this line in production
-          result, // Remove this line in production
-         });
+        return res.status(400).json({ error: `Already exists` });
       }
 
       await users.insertOne(user)

@@ -31,15 +31,7 @@ Before you begin, ensure you have met the following requirements:
 - **MongoDB**: The project relies on MongoDB as its secondary database system. Make sure you have MongoDB installed; we recommend using version 7.0.1.
 - **Redis**: Redis is used for caching and session management. Ensure you have Redis installed, preferably version 6.0.16.
 
-## Authentication Service
-### Getting Started
-### Usage
-
-## Socialplace Service
-### Getting Started
-### Usage
-
-## Marketplace Service
+## Marketplace Service (REST)
 
 ### Getting Started
 
@@ -86,6 +78,8 @@ The project includes various routes and controllers for different features. You 
 * `/products`: Get a list of products.
 
 Feel free to explore the [controllers](./marketplace_microservice/api/v1/src/controllers/) and [routes](./marketplace_microservice/api/v1/src/routes/) in the project's code to understand how they work and customize them to fit your application's requirements.
+
+Here is a short [video demo](https://drive.google.com/file/d/1m_CScUXKQFDY9mkbn9ZOmYuem1TdCobj/view?usp=sharing)
 
 ## Contributing
 

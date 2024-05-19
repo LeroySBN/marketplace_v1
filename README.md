@@ -32,7 +32,7 @@ Follow these steps to get the project up and running on your local machine:
 
   ```bash
   git clone https://github.com/leroysb/alx-specialization_project.git
-  cd alx-specialization_project/marketplace_microservice
+  cd alx-specialization_project
   ```
 
 2. Install project dependencies

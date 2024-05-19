@@ -3,9 +3,8 @@
 
 - [Description](#description)
 - [Requirements](#requirements)
-- [Marketplace Service](#marketplace-service)
-  - [Getting Started](#getting-started)
-  - [Usage](#usage)
+- [Getting Started](#getting-started)
+- [Usage](#usage)
 - [Contributing](#contributing)
 - [Authors](#authors)
 - [License](#license)
@@ -25,9 +24,7 @@ Before you begin, ensure you have met the following requirements:
 - **MongoDB**: The project relies on MongoDB as its secondary database system. Make sure you have MongoDB installed; we recommend using version 7.0.1.
 - **Redis**: Redis is used for caching and session management. Ensure you have Redis installed, preferably version 6.0.16.
 
-## Marketplace Service (REST)
-
-### Getting Started
+## Getting Started
 
 Follow these steps to get the project up and running on your local machine:
 
@@ -62,7 +59,7 @@ Follow these steps to get the project up and running on your local machine:
 
   `npm start`
 
-### Usage
+## Usage
 
 The project includes various routes and controllers for different features. You can customize and expand upon these features to build your web application. Here are some of the key routes:
 

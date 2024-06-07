@@ -11,7 +11,7 @@
 
 ## Description
 
-This project is a template for building microservices using Flask, TypeScript, Express.js, MongoDB, and Redis. It includes basic functionality such as user authentication, vendor management, product management, and more.
+This project is a template for building an e-commerce backend system using TypeScript, Express.js, MongoDB, and Redis. It includes basic functionality such as user authentication, vendor management, product management, and more.
 
 ## Requirements
 

@@ -18,7 +18,6 @@ This project is a template for building an e-commerce backend system using TypeS
 Before you begin, ensure you have met the following requirements:
 
 - **Linux**: We recommend using Ubuntu 22.04 for this project.
-- **Python**: You need Python3 to run the application. We recommend using version 3.8.10 or later.
 - **Node.js**: You need Node.js to run the application. We recommend using version 18.17.1 or later.
 - **MySQL**: The project relies on MySQL as its primary database system. Make sure you have MongoDB installed; we recommend using version 8.0.
 - **MongoDB**: The project relies on MongoDB as its secondary database system. Make sure you have MongoDB installed; we recommend using version 7.0.1.

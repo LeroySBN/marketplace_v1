@@ -1,4 +1,4 @@
-# ALX Specialization Project
+# E-commerce API project
 ## Table of Contents
 
 - [Description](#description)
@@ -82,10 +82,6 @@ We welcome contributions to this project. To contribute:
 5. Submit a pull request to the main repository's main branch.
 
 Please follow the project's coding conventions and keep your code clean and well-documented.
-
-## Authors
-
-[Leroy Buliro](https://github.com/leroybuliro)
 
 ## License
 

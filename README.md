@@ -155,7 +155,7 @@ Please follow the project's coding conventions and keep your code clean and well
 
 ## Authors
 
-* [Leroy Nazoi] | [Github](https://github.com/leroysbn) | [LinkedIn](https://linkedin.com/in/lsbn)
+* Leroy Nazoi | [Github](https://github.com/leroysbn) | [LinkedIn](https://linkedin.com/in/lsbn)
 
 ## License
 

@@ -4,7 +4,10 @@
 - [Description](#description)
 - [Requirements](#requirements)
 - [Getting Started](#getting-started)
+  - [Using Docker (Recommended)](#using-docker-recommended)
+  - [Manual Setup](#manual-setup)
 - [Usage](#usage)
+- [Testing](#testing)
 - [Contributing](#contributing)
 - [Authors](#authors)
 - [License](#license)
@@ -15,61 +18,128 @@ This project is a template for building an e-commerce backend system using TypeS
 
 ## Requirements
 
-Before you begin, ensure you have met the following requirements:
+### Using Docker (Recommended)
+- Docker Engine 24.0.0 or later
+- Docker Compose v2.20.0 or later
 
-- **Linux**: We recommend using Ubuntu 22.04 for this project.
-- **Node.js**: You need Node.js to run the application. We recommend using version 18.17.1 or later.
-- **MySQL**: The project relies on MySQL as its primary database system. Make sure you have MongoDB installed; we recommend using version 8.0.
-- **MongoDB**: The project relies on MongoDB as its secondary database system. Make sure you have MongoDB installed; we recommend using version 7.0.1.
-- **Redis**: Redis is used for caching and session management. Ensure you have Redis installed, preferably version 6.0.16.
+### Manual Setup
+- **Linux**: We recommend using Ubuntu 22.04
+- **Node.js**: Version 18.17.1 or later
+- **MongoDB**: Version 7.0.1 or later
+- **Redis**: Version 6.0.16 or later
 
 ## Getting Started
 
-Follow these steps to get the project up and running on your local machine:
+### Using Docker (Recommended)
 
 1. Clone the repository:
+```bash
+git clone https://github.com/leroysb/alx-specialization_project.git
+cd alx-specialization_project
+```
 
-  ```bash
-  git clone https://github.com/leroysb/alx-specialization_project.git
-  cd alx-specialization_project
-  ```
+2. Create a `.env` file:
+```bash
+cp .env.example .env
+```
 
-2. Install project dependencies
+3. Start the application:
 
-  `npm install`
+For development:
+```bash
+# Build and start all services in development mode
+docker compose -f docker-compose.dev.yml up --build
 
-3. Configure environment variables
+# Run in detached mode
+docker compose -f docker-compose.dev.yml up -d
+```
 
-  Create a **.env** file in the project root and configure the following environment variables as needed:
+For production:
+```bash
+# Build and start all services in production mode
+docker compose up --build
 
-  ```
-  MARKETPLACE_ENV = 'dev'
-  MARKETPLACE_API_HOST = 'localhost'
-  MARKETPLACE_API_PORT = '5000'
-  MONGODB_HOST = 'localhost'
-  MONGODB_PORT = '27017'
-  MONGODB_DATABASE = 'marketplace_dev_db'
-  REDIS_HOST=localhost
-  REDIS_PORT=6379
-  REDIS_DB=0
-  ```
+# Run in detached mode
+docker compose up -d
+```
 
-4. Start the server
+The API will be available at `http://localhost:3000`
 
-  `npm start`
+To stop the services:
+```bash
+# Development
+docker compose -f docker-compose.dev.yml down
+
+# Production
+docker compose down
+```
+
+To view logs:
+```bash
+# View all service logs
+docker compose logs -f
+
+# View specific service logs (e.g., api)
+docker compose logs -f api
+```
+
+### Manual Setup
+
+1. Clone the repository:
+```bash
+git clone https://github.com/leroysb/alx-specialization_project.git
+cd alx-specialization_project
+```
+
+2. Install project dependencies:
+```bash
+npm install
+```
+
+3. Configure environment variables:
+Create a `.env` file in the project root with the following:
+```env
+MARKETPLACE_ENV = 'dev'
+MARKETPLACE_API_HOST = 'localhost'
+MARKETPLACE_API_PORT = '3000'
+MONGODB_HOST = 'localhost'
+MONGODB_PORT = '27017'
+MONGODB_DATABASE = 'marketplace_dev_db'
+REDIS_HOST = localhost
+REDIS_PORT = 6379
+REDIS_DB = 0
+```
+
+4. Start the server:
+```bash
+npm start
+```
 
 ## Usage
 
-The project includes various routes and controllers for different features. You can customize and expand upon these features to build your web application. Here are some of the key routes:
+The API includes various endpoints for different features:
 
-* `/status`: Check the status of the server.
-* `/vendors`: Create a new vendor account.
-* `/vendors/me`: Retrieve information about the currently logged-in vendor.
-* `/products`: Get a list of products.
+* `GET /status`: Check the status of the server
+* `POST /vendors`: Create a new vendor account
+* `GET /vendors/me`: Retrieve information about the currently logged-in vendor
+* `GET /products`: Get a list of products with filtering and pagination
+* `GET /products/:id`: Get a specific product by ID
 
-Feel free to explore the [controllers](./marketplace_microservice/api/v1/src/controllers/) and [routes](./marketplace_microservice/api/v1/src/routes/) in the project's code to understand how they work and customize them to fit your application's requirements.
+For detailed API documentation, please refer to our [API Documentation](./docs/api.md).
 
-Here is a short [video demo](https://drive.google.com/file/d/1m_CScUXKQFDY9mkbn9ZOmYuem1TdCobj/view?usp=sharing)
+## Testing
+
+Run the test suite:
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Generate test coverage report
+npm run test:coverage
+```
 
 ## Contributing
 
@@ -82,6 +152,10 @@ We welcome contributions to this project. To contribute:
 5. Submit a pull request to the main repository's main branch.
 
 Please follow the project's coding conventions and keep your code clean and well-documented.
+
+## Authors
+
+* [Leroy Nazoi] | [Github](https://github.com/leroysbn) | [LinkedIn](https://linkedin.com/in/lsbn)
 
 ## License
 

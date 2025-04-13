@@ -34,16 +34,11 @@ This project is a template for building an e-commerce backend system using TypeS
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/leroysb/alx-specialization_project.git
-cd alx-specialization_project
+git clone https://github.com/LeroySBN/marketplace_v1.git
+cd marketplace_v1/docker
 ```
 
-2. Create a `.env` file:
-```bash
-cp .env.example .env
-```
-
-3. Start the application:
+2. Start the application:
 
 For development:
 ```bash
@@ -87,8 +82,8 @@ docker compose logs -f api
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/leroysb/alx-specialization_project.git
-cd alx-specialization_project
+git clone https://github.com/LeroySBN/marketplace_v1.git
+cd marketplace_v1
 ```
 
 2. Install project dependencies:
@@ -99,15 +94,14 @@ npm install
 3. Configure environment variables:
 Create a `.env` file in the project root with the following:
 ```env
-MARKETPLACE_ENV = 'dev'
+NODE_ENV = 'dev'
 MARKETPLACE_API_HOST = 'localhost'
-MARKETPLACE_API_PORT = '3000'
+MARKETPLACE_API_PORT = '8080'
 MONGODB_HOST = 'localhost'
 MONGODB_PORT = '27017'
 MONGODB_DATABASE = 'marketplace_dev_db'
-REDIS_HOST = localhost
-REDIS_PORT = 6379
-REDIS_DB = 0
+REDIS_HOST = 'redis'
+REDIS_PORT = '6379'
 ```
 
 4. Start the server:
@@ -155,7 +149,7 @@ Please follow the project's coding conventions and keep your code clean and well
 
 ## Authors
 
-* Leroy Nazoi | [Github](https://github.com/leroysbn) | [LinkedIn](https://linkedin.com/in/lsbn)
+* Leroy Nazoi | [LinkedIn](https://linkedin.com/in/lsbn)
 
 ## License
 

@@ -1,16 +1,21 @@
-version: '3.8'
+name: marketplace_app
 
 services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: api.Dockerfile
     ports:
-      - "3000:3000"
+      - "5231:5010"
     environment:
       - NODE_ENV=production
-      - MONGODB_URI=mongodb://mongodb:27017/marketplace
+      - MARKETPLACE_API_HOST=localhost
+      - MARKETPLACE_API_PORT=5010
+      - MONGO_URL=mongodb://admin:admin_password@mongodb:27017/marketplace_db?authSource=admin
       - REDIS_URL=redis://redis:6379
+      - STORAGE_DIR=/data/storage
+    volumes:
+      - marketplace-storage:/data/storage
     depends_on:
       - mongodb
       - redis
@@ -19,9 +24,12 @@ services:
     restart: unless-stopped
 
   mongodb:
-    image: mongo:6
-    ports:
-      - "27017:27017"
+    image: mongo:latest
+    container_name: marketplace-mongodb
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=admin_password
+      - MONGO_INITDB_DATABASE=marketplace_db
     volumes:
       - mongodb_data:/data/db
     networks:
@@ -29,11 +37,15 @@ services:
     restart: unless-stopped
 
   redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
+    image: redis:7.4-alpine
+    container_name: marketplace-redis
+    command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
+    environment:
+      REDIS_PASSWORD: redis_password
+    user: redis
     volumes:
-      - redis_data:/data
+      - redis-data:/data
+      - ./docker/configs/redis.conf:/usr/local/etc/redis/redis.conf:ro
     networks:
       - marketplace_network
     restart: unless-stopped
@@ -45,3 +57,4 @@ networks:
 volumes:
   mongodb_data:
   redis_data:
+  marketplace-storage:

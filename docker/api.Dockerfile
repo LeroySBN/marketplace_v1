@@ -1,24 +1,31 @@
 # Build stage
-FROM node:18-alpine AS builder
+FROM node:22-alpine AS builder
 
-WORKDIR /app
+WORKDIR /data/api
+
+# Create necessary directories with correct permissions
+RUN mkdir -p /data/storage /data/api/node_modules && \
+    chown -R node:node /data/storage /data/api
+
+# Switch to non-root user
+USER node
 
 # Copy package files
-COPY package*.json ./
+COPY --chown=node:node package*.json ./
 
 # Install dependencies
-RUN npm ci
+RUN npm install
 
 # Copy source code
-COPY . .
+COPY --chown=node:node . ./
 
 # Build TypeScript code
 RUN npm run build
 
 # Production stage
-FROM node:18-alpine
+FROM node:22-alpine
 
-WORKDIR /app
+WORKDIR /data/api
 
 # Copy package files
 COPY package*.json ./
@@ -27,13 +34,10 @@ COPY package*.json ./
 RUN npm ci --production
 
 # Copy built files from builder stage
-COPY --from=builder /app/dist ./dist
-
-# Copy necessary files
-COPY .env* ./
+COPY --from=builder /data/api/dist ./dist
 
 # Expose API port
-EXPOSE 3000
+EXPOSE 5010
 
 # Start the application
 CMD ["npm", "start"]

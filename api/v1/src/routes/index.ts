@@ -10,13 +10,13 @@ const router = Router();
 // Health check route
 router.get('/health', AppController.getHealth);
 
-// Auth routes
-router.post('/auth/signin', AuthController.signIn);
-router.post('/auth/signup', AuthController.signUp);
-
 // App status routes
 router.get('/status', AppController.getStatus);
 router.get('/stats', AppController.getStats);
+
+// Auth routes
+router.post('/auth/signin', AuthController.signIn);
+router.post('/auth/signup', AuthController.signUp);
 
 // User routes
 router.post('/users', UsersController.createUser);

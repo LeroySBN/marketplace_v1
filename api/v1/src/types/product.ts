@@ -1,11 +1,13 @@
+import { ObjectId } from 'mongodb';
+
 export interface Product {
-  _id: string;
+  _id: ObjectId;
   name: string;
-  price: number;
   description: string;
+  price: number;
+  stock: string;
   category: string;
-  vendor_id: string;
-  stock: number;
+  vendorId: ObjectId;
   created_at: Date;
   updated_at: Date;
 }
@@ -17,8 +19,7 @@ export interface ProductQuery {
   minPrice?: number;
   maxPrice?: number;
   sortBy?: 'price' | 'created_at' | 'name';
-  sortOrder?: 'asc' | 'desc';
-  search?: string;
+  order?: 'asc' | 'desc';
 }
 
 export interface PaginatedResponse<T> {

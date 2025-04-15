@@ -2,52 +2,74 @@ name: marketplace_app
 
 services:
   api:
+    container_name: marketplace-api
     build:
-      context: .
-      dockerfile: api.Dockerfile
+      context: ..
+      dockerfile: ./docker/api.Dockerfile
     ports:
       - "5231:5010"
     environment:
       - NODE_ENV=production
       - MARKETPLACE_API_HOST=localhost
       - MARKETPLACE_API_PORT=5010
-      - MONGO_URL=mongodb://admin:admin_password@mongodb:27017/marketplace_db?authSource=admin
+      - MONGODB_HOST=mongodb
+      - MONGODB_PORT=27017
+      - MONGODB_DATABASE=marketplace_db
+      - MONGODB_USERNAME=admin
+      - MONGODB_PASSWORD=admin_password
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
       - REDIS_URL=redis://redis:6379
       - STORAGE_DIR=/data/storage
     volumes:
       - marketplace-storage:/data/storage
     depends_on:
-      - mongodb
-      - redis
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - marketplace_network
     restart: unless-stopped
 
   mongodb:
-    image: mongo:latest
+    image: mongo:6
     container_name: marketplace-mongodb
     environment:
       - MONGO_INITDB_ROOT_USERNAME=admin
       - MONGO_INITDB_ROOT_PASSWORD=admin_password
       - MONGO_INITDB_DATABASE=marketplace_db
+    ports:
+      - "27017:27017"
     volumes:
-      - mongodb_data:/data/db
+      - mongodb-data:/data/db
     networks:
       - marketplace_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     restart: unless-stopped
 
   redis:
     image: redis:7.4-alpine
     container_name: marketplace-redis
-    command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
+    command: ["redis-server", "--requirepass", "redis_password"]
     environment:
-      REDIS_PASSWORD: redis_password
-    user: redis
+      - REDIS_PASSWORD=redis_password
+    ports:
+      - "6379:6379"
     volumes:
       - redis-data:/data
-      - ./docker/configs/redis.conf:/usr/local/etc/redis/redis.conf:ro
     networks:
       - marketplace_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
 
 networks:
@@ -55,6 +77,6 @@ networks:
     driver: bridge
 
 volumes:
-  mongodb_data:
-  redis_data:
+  mongodb-data:
+  redis-data:
   marketplace-storage:

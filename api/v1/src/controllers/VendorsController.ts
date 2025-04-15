@@ -1,356 +1,258 @@
 import { Request, Response } from 'express';
-import { v4 as uuidv4 } from 'uuid';
-import sha1 from 'sha1';
-
-import { VendorObj, ProductObj } from './main';
+import { ObjectId } from 'mongodb';
+import { Vendor, Product } from '../types';
 import mongoClient from '../utils/mongo';
 import redisClient from '../utils/redis';
-
+import { hashPassword } from '../utils/auth';
 
 class VendorsController {
-  static async postVendor(req: Request, res: Response): Promise<Response | void> {
+  static async createVendor(req: Request, res: Response): Promise<Response> {
     try {
-      const {
-        email,
-        password,
-        name = "",
-        description = "",
-        avatar = "",
-        banner = "",
-        location = "",
-      } = req.body;
-  
-      if (!email) {
-        return res.status(400).json({ error: 'Missing email' });
+      const { name, email, password } = req.body as {
+        name: string;
+        email: string;
+        password: string;
+      };
+
+      if (!name || !email || !password) {
+        return res.status(400).json({ error: 'Missing required fields' });
       }
-  
-      if (!password) {
-        return res.status(400).json({ error: 'Missing password' });
+
+      const vendors = mongoClient.db.collection<Vendor>('vendors');
+      const existingVendor = await vendors.findOne({ email });
+
+      if (existingVendor) {
+        return res.status(400).json({ error: 'Vendor already exists' });
       }
-  
-      const vendor: VendorObj = {
-        _id: uuidv4(),
-        dateCreated: new Date().toISOString(),
+
+      const vendor: Vendor = {
+        _id: new ObjectId(),
+        name,
         email,
-        password: sha1(password),
+        products: [],
+        created_at: new Date(),
+        updated_at: new Date()
+      };
+
+      const result = await vendors.insertOne(vendor);
+      await redisClient.set(`vendor_${email}`, await hashPassword(password), 86400); // 24 hours TTL
+      return res.status(201).json({ id: result.insertedId });
+
+    } catch (err) {
+      console.error('Error creating vendor:', err);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  static async getVendor(req: Request, res: Response): Promise<Response> {
+    try {
+      const { id } = req.params;
+
+      if (!ObjectId.isValid(id)) {
+        return res.status(400).json({ error: 'Invalid vendor ID' });
+      }
+
+      const vendors = mongoClient.db.collection<Vendor>('vendors');
+      const vendor = await vendors.findOne({ _id: new ObjectId(id) });
+
+      if (!vendor) {
+        return res.status(404).json({ error: 'Vendor not found' });
+      }
+
+      return res.status(200).json(vendor);
+
+    } catch (err) {
+      console.error('Error getting vendor:', err);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  static async updateVendor(req: Request, res: Response): Promise<Response> {
+    try {
+      const { id } = req.params;
+      const updates = req.body as {
+        name?: string;
+        email?: string;
+        password?: string;
+      };
+
+      if (!ObjectId.isValid(id)) {
+        return res.status(400).json({ error: 'Invalid vendor ID' });
+      }
+
+      if (updates.password) {
+        await redisClient.set(`vendor_${updates.email}`, await hashPassword(updates.password), 86400); // 24 hours TTL
+        delete updates.password;
+      }
+
+      const vendors = mongoClient.db.collection<Vendor>('vendors');
+      const result = await vendors.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: { ...updates, updated_at: new Date() } }
+      );
+
+      if (result.matchedCount === 0) {
+        return res.status(404).json({ error: 'Vendor not found' });
+      }
+
+      return res.status(200).json({ message: 'Vendor updated successfully' });
+
+    } catch (err) {
+      console.error('Error updating vendor:', err);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  static async deleteVendor(req: Request, res: Response): Promise<Response> {
+    try {
+      const { id } = req.params;
+
+      if (!ObjectId.isValid(id)) {
+        return res.status(400).json({ error: 'Invalid vendor ID' });
+      }
+
+      const vendors = mongoClient.db.collection<Vendor>('vendors');
+      const vendor = await vendors.findOne({ _id: new ObjectId(id) });
+
+      if (!vendor) {
+        return res.status(404).json({ error: 'Vendor not found' });
+      }
+
+      // Delete vendor's products
+      const products = mongoClient.db.collection<Product>('products');
+      await products.deleteMany({ vendorId: new ObjectId(id) });
+
+      // Delete vendor
+      await vendors.deleteOne({ _id: new ObjectId(id) });
+
+      // Delete vendor's password from Redis
+      await redisClient.del(`vendor_${vendor.email}`);
+
+      return res.status(200).json({ message: 'Vendor deleted successfully' });
+
+    } catch (err) {
+      console.error('Error deleting vendor:', err);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  static async getVendorProducts(req: Request, res: Response): Promise<Response> {
+    try {
+      const { id } = req.params;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = Math.min(parseInt(req.query.limit as string) || 10, 100);
+      const sort = req.query.sort as string || 'name';
+      const order = req.query.order as string || 'asc';
+
+      if (!ObjectId.isValid(id)) {
+        return res.status(400).json({ error: 'Invalid vendor ID' });
+      }
+
+      const products = mongoClient.db.collection<Product>('products');
+      const [items, total] = await Promise.all([
+        products.find({ vendorId: new ObjectId(id) })
+          .sort({ [sort]: order === 'asc' ? 1 : -1 })
+          .skip((page - 1) * limit)
+          .limit(limit)
+          .toArray(),
+        products.countDocuments({ vendorId: new ObjectId(id) })
+      ]);
+
+      return res.status(200).json({
+        data: items,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+        hasMore: page * limit < total
+      });
+
+    } catch (err) {
+      console.error('Error getting vendor products:', err);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  static async addVendorProduct(req: Request, res: Response): Promise<Response> {
+    try {
+      const { id } = req.params;
+      const { name, price, description, category, stock } = req.body as {
+        name: string;
+        price: number;
+        description: string;
+        category: string;
+        stock: string | number;
+      };
+
+      if (!ObjectId.isValid(id)) {
+        return res.status(400).json({ error: 'Invalid vendor ID' });
+      }
+
+      if (!name || !price || !description || !category || !stock) {
+        return res.status(400).json({ error: 'Missing required fields' });
+      }
+
+      const vendors = mongoClient.db.collection<Vendor>('vendors');
+      const vendor = await vendors.findOne({ _id: new ObjectId(id) });
+
+      if (!vendor) {
+        return res.status(404).json({ error: 'Vendor not found' });
+      }
+
+      const products = mongoClient.db.collection<Product>('products');
+      const product = {
+        _id: new ObjectId(),
         name,
         description,
-        avatar,
-        banner,
-        location,
-        products: [],
-      };
-      
-      const vendors = mongoClient.db.collection('vendors');
-      
-      const result = await vendors.findOne({email});
-      
-      if (result) {
-        const authKey = Buffer.from(`${email}:${password}`).toString('base64');
-        return res.status(400).json({ 
-          error: `Already exists`,
-          Authentication: `Basic ${authKey}`, // Remove this line in production
-          result, // Remove this line in production
-         });
+        price: Number(price),
+        stock: stock.toString(),
+        category,
+        vendorId: new ObjectId(id),
+        created_at: new Date(),
+        updated_at: new Date()
+      } satisfies Product;
+
+      await products.insertOne(product);
+
+      return res.status(201).json(product);
+
+    } catch (err) {
+      console.error('Error adding vendor product:', err);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  static async removeVendorProduct(req: Request, res: Response): Promise<Response> {
+    try {
+      const { id, productId } = req.params;
+
+      if (!ObjectId.isValid(id) || !ObjectId.isValid(productId)) {
+        return res.status(400).json({ error: 'Invalid vendor or product ID' });
       }
 
-      await vendors.insertOne(vendor)
-      .then(() => {
-        return res.status(400).json(vendor);
-      })
-      .catch ((error: Error) => {
-        return res.status(400).json({ error: error.message });
-      })
-      .finally(() => {
+      const vendors = mongoClient.db.collection<Vendor>('vendors');
+      const vendor = await vendors.findOne({ _id: new ObjectId(id) });
+
+      if (!vendor) {
+        return res.status(404).json({ error: 'Vendor not found' });
+      }
+
+      const products = mongoClient.db.collection<Product>('products');
+      const product = await products.findOne({
+        _id: new ObjectId(productId),
+        vendorId: new ObjectId(id)
       });
-    } catch (error) {
-      console.log(error);
-      return res.status(500).json({ error: "Internal server error" });
-    }
-  }
 
-  static async getMe(req: Request, res: Response): Promise<Response | void> {
-    try {
-      const token = req.header('X-Token');
-      const vendorId = await redisClient.get(`auth_${token}`);
-
-      if (vendorId) {
-        const vendors = mongoClient.db.collection('vendors');
-        const vendor = await vendors.findOne({ _id: vendorId });
-        if (vendor) {
-          return res.status(200).json({ id: vendor._id, email: vendor.email });
-        }
-      }
-      return res.status(401).json({ error: 'Unauthorized' });
-
-    } catch (error) {
-      console.log(error);
-      return res.status(500).json({ error: "Internal server error" });
-    }
-  }
-
-  static async postVendorProduct(req: Request, res: Response): Promise<Response | void> {
-    try {
-      const token = req.header('X-Token');
-      const vendorId = await redisClient.get(`auth_${token}`);
-
-      if (vendorId) {
-        const vendors = mongoClient.db.collection('vendors');
-        const vendor = await vendors.findOne({ _id: vendorId});
-  
-        if (vendor) {
-          const { name, description, price, imageUrl, stock, productId, location, banner } = req.body;
-          const idProduct = req.query.id as string;
-          
-          if (!stock) {
-            return res.status(400).json({ error: 'Missing stock' });
-          }
-          if (!Number.isInteger(stock) || stock < 1) {
-            return res.status(400).json({ error: 'Price should be a positive integer' });
-          }
-
-          if (productId && (stock || price || imageUrl || description || name || location)) {
-            const product = await mongoClient.db.collection('products').findOne({ _id: productId });
-
-            if (product) {
-              await vendor.products.map((product: ProductObj) => {
-                if (product._id === productId) {
-                  product.name = name || product.name;
-                  product.price = price || product.price;
-                  product.stock = stock || product.stock;
-                  product.imageUrl = imageUrl || product.imageUrl;
-                  product.description = description || product.description;
-                }
-              });
-              
-              await vendors.updateOne({ _id: vendorId }, { $set: { products: vendor.products } });
-              console.log({ suucess: "Vendor's product list updated" });
-              
-
-              const products = mongoClient.db.collection('products');
-
-              const updatedProduct = await products.updateOne({ _id: productId }, { $set: {
-                name: name || product.name,
-                price: price || product.price,
-                stock : stock || product.stock,
-                imageUrl : imageUrl || product.imageUrl,
-                description: description || product.description,
-              }});
-
-              const result = await products.findOne({ _id: productId });
-
-              return res.status(200).json(result);
-            } else {
-              return res.status(404).json({ error: 'Not found' });
-            }
-          }
-
-          if (!name) {
-            return res.status(400).json({ error: 'Missing name' });
-          }
-          if (!price) {
-            return res.status(400).json({ error: 'Missing price' });
-          }
-          if (!Number.isInteger(price) || price < 1) {
-            return res.status(400).json({ error: 'Price should be a positive integer' });
-          }
-  
-          const product: ProductObj = {
-            _id: uuidv4(),
-            dateCreated: new Date().toISOString(),
-            vendorId: vendor._id.toString(),
-            name,
-            description,
-            price,
-            imageUrl,
-            stock,
-          };
-  
-          await mongoClient.db.collection('products').insertOne(product);
-  
-          vendors.updateOne({ _id: vendorId }, { $push: { products: product } })
-          .then(() => {
-            return res.status(200).json(product);
-          })
-        } else {
-          return res.status(401).json({ error: 'Unauthorized' });
-        }
-      } else {
-        return res.status(401).json({ error: 'Unauthorized' });
+      if (!product) {
+        return res.status(404).json({ error: 'Product not found' });
       }
 
-    } catch (error) {
-      console.log(error);
-      return res.status(500).json({ error: "Internal server error" });      
-    }
-  }
+      await products.deleteOne({ _id: new ObjectId(productId) });
 
-  static async putVendorProduct(req: Request, res: Response): Promise<Response | void> {
-    try {
-      const token = req.header('X-Token');
-      const vendorId = await redisClient.get(`auth_${token}`);
+      return res.status(200).json({ message: 'Product removed successfully' });
 
-      if (vendorId) {
-        const vendors = mongoClient.db.collection('vendors');
-        const vendor = await vendors.findOne({ _id: vendorId});
-  
-        if (vendor) {
-          const { name, description, price, imageUrl, stock, location, banner } = req.body;
-          const productId = req.query.id as string;
-          
-          if (!Number.isInteger(stock) || stock < 1) {
-            return res.status(400).json({ error: 'Price should be a positive integer' });
-          }
-
-          const product = await mongoClient.db.collection('products').findOne({ _id: productId });
-
-          if (product) {
-            await vendor.products.map((product: ProductObj) => {
-              if (product._id === productId) {
-                product.name = name || product.name;
-                product.price = price || product.price;
-                product.stock = stock || product.stock;
-                product.imageUrl = imageUrl || product.imageUrl;
-                product.description = description || product.description;
-              }
-            });
-            
-            await vendors.updateOne({ _id: vendorId }, { $set: { products: vendor.products } });
-            console.log({ suucess: "Vendor's product list updated" });
-            
-
-            const products = mongoClient.db.collection('products');
-
-            const updatedProduct = await products.updateOne({ _id: productId }, { $set: {
-              name: name || product.name,
-              price: price || product.price,
-              stock : stock || product.stock,
-              imageUrl : imageUrl || product.imageUrl,
-              description: description || product.description,
-            }});
-
-            const result = await products.findOne({ _id: productId });
-
-            return res.status(200).json(result);
-          } else {
-            return res.status(404).json({ error: 'Not found' });
-          }
-        } else {
-          return res.status(401).json({ error: 'Unauthorized' });
-        }
-      } else {
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
-
-    } catch (error) {
-      console.log(error);
-      return res.status(500).json({ error: "Internal server error" });      
-    }
-  }
-
-  static async delVendorProduct(req: Request, res: Response): Promise<Response | void> {
-    try {
-      const token = req.header('X-Token');
-      const vendorId = await redisClient.get(`auth_${token}`);
-
-      if (vendorId) {
-        const vendors = mongoClient.db.collection('vendors');
-        const vendor = await vendors.findOne({ _id: vendorId});
-  
-        if (vendor) {
-          const productId = req.params.id;
-
-          const product = await mongoClient.db.collection('products').findOne({ _id: productId });
-
-          if (product) {
-            await vendor.products.map((product: ProductObj) => {
-              if (product._id === productId) {
-                vendor.products.splice(vendor.products.indexOf(product), 1);
-              }
-            });
-            
-            await vendors.updateOne({ _id: vendorId }, { $set: { products: vendor.products } });
-            console.log({ suucess: "Vendor's product list updated" });
-            
-            await mongoClient.db.collection('products').deleteOne({ _id: productId });
-
-            return res.status(204).json({ success: "Product deleted" });
-          } else {
-            return res.status(404).json({ error: 'Not found' });
-          }
-        } else {
-          return res.status(401).json({ error: 'Unauthorized' });
-        }
-      } else {
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
-
-    } catch (error) {
-      console.log(error);
-      return res.status(500).json({ error: "Internal server error" });      
-    }
-  }
-
-  static async getVendorProducts(req: Request, res: Response): Promise<Response | void> {
-    try {
-      const token = req.header('X-Token');
-      const vendorId = await redisClient.get(`auth_${token}`);
-      let page = parseInt(req.query.page as string, 10);
-
-      if (!Number.isInteger(page) || page < 0) {
-        page = 0;
-      }
-      
-      if (vendorId) {
-        const pageSize = 20;
-        const skipCount = page * pageSize;
-        const vendors = await mongoClient.db.collection('vendors');
-        const vendor = await vendors.findOne({ _id: vendorId });
-        
-        if (vendor) {
-          const products = vendor.products.slice(skipCount, skipCount + pageSize);
-          return res.status(200).json(products);
-        } else {
-          return res.status(401).json({ error: 'Unauthorized' });
-        }
-      } else {
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
-    } catch (error) {
-      console.log(error);
-      return res.status(500).json({ error: "Internal server error" });      
-    }
-  }
-
-  static async getVendorOrders(req: Request, res: Response): Promise<Response | void> {
-    try {
-      const token = req.header('X-Token');
-      const vendorId = await redisClient.get(`auth_${token}`);
-
-      if (vendorId) {
-        const vendor = await mongoClient.db.collection('vendors').findOne({ _id: vendorId });
-  
-        if (vendor) {
-          const deliveries = await mongoClient.db.collection('deliveries').find({ vendorId }).toArray();
-    
-          if (deliveries) {
-            return res.status(200).json({
-              count: deliveries.length,
-              deliveries,
-            });
-          } else {
-            return res.status(404).json({ error: 'No orders' });
-          }
-        } else {
-          return res.status(401).json({ error: 'Unauthorized' });
-        }
-      } else {
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
-
-    } catch (error) {
-      console.log(error);
-      return res.status(500).json({ error: "Internal server error" });
+    } catch (err) {
+      console.error('Error removing vendor product:', err);
+      return res.status(500).json({ error: 'Internal server error' });
     }
   }
 }

@@ -22,8 +22,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/v1', router);
 
 // Specify the port to listen on
-const host = process.env.MARKETPLACE_API_HOST || '0.0.0.0';
-const port = parseInt(process.env.MARKETPLACE_API_PORT || '8000', 10);
+const host = '0.0.0.0';  // Always bind to all network interfaces
+const port = parseInt(process.env.MARKETPLACE_API_PORT || '5010', 10);
 
 const server = http.createServer(app);
 

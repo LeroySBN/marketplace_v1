@@ -1,42 +1,77 @@
 // MongoDB utils
-import { MongoClient } from 'mongodb';
-import dotenv from 'dotenv';
+import { MongoClient, Db } from 'mongodb';
+import { config } from 'dotenv';
 
-dotenv.config();
+config();
 
-const host = process.env.MONGODB_HOST || 'localhost';
-const port = parseInt(process.env.MONGODB_PORT || '27017', 10);
-const database = process.env.MONGODB_DATABASE || 'marketplace_db';
-const url = process.env.MONGO_URL || `mongodb://${host}:${port}`;
+class DBClient {
+  private client: MongoClient;
+  private _db: Db | null = null;
+  private static instance: DBClient;
 
-class MongoDBClient {
-  client: MongoClient;
-  db: any;
+  private constructor() {
+    const host = process.env.MONGODB_HOST || 'localhost';
+    const port = process.env.MONGODB_PORT || '27017';
+    const database = process.env.MONGODB_DATABASE || 'marketplace_dev_db';
+    const username = process.env.MONGODB_USERNAME;
+    const password = process.env.MONGODB_PASSWORD;
 
-  constructor() {
+    let url: string;
+    if (username && password) {
+      url = `mongodb://${username}:${password}@${host}:${port}/${database}?authSource=admin`;
+    } else {
+      url = `mongodb://${host}:${port}/${database}`;
+    }
+
     this.client = new MongoClient(url, {
-        useUnifiedTopology: true,
-        connectTimeoutMS: 5000,
-        serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 5000
     });
+  }
 
+  static getInstance(): DBClient {
+    if (!DBClient.instance) {
+      DBClient.instance = new DBClient();
+    }
+    return DBClient.instance;
+  }
+
+  async connect(): Promise<void> {
     try {
-      this.client.connect().then(() => {
-        this.db = this.client.db(database);
-      }).catch((err) => {
-        console.log(err);
-      });
+      await this.client.connect();
+      this._db = this.client.db();
+      console.log('Connected to MongoDB');
     } catch (err) {
-      console.log(err);
+      console.error('MongoDB connection error:', err);
+      throw err;
     }
   }
 
-  isAlive(): boolean {
-    return !!this.client && !!this.db;
+  async isConnected(): Promise<boolean> {
+    try {
+      await this.client.db().command({ ping: 1 });
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  get db(): Db {
+    if (!this._db) {
+      throw new Error('Database not initialized. Call connect() first.');
+    }
+    return this._db;
+  }
+
+  async close(): Promise<void> {
+    if (this.client) {
+      await this.client.close();
+      this._db = null;
+    }
   }
 
   async nbUsers() {
-    if (!this.isAlive()) {
+    if (!(await this.isConnected())) {
       return -1;
     }
     const usersCollection = this.db.collection('users');
@@ -45,7 +80,7 @@ class MongoDBClient {
   }
 
   async nbVendors() {
-    if (!this.isAlive()) {
+    if (!(await this.isConnected())) {
       return -1;
     }
     const vendorsCollection = this.db.collection('vendors');
@@ -54,7 +89,7 @@ class MongoDBClient {
   }
 
   async nbProducts() {
-    if (!this.isAlive()) {
+    if (!(await this.isConnected())) {
       return -1;
     }
     const productsCollection = this.db.collection('products');
@@ -63,7 +98,7 @@ class MongoDBClient {
   }
 
   async nbOrders() {
-    if (!this.isAlive()) {
+    if (!(await this.isConnected())) {
       return -1;
     }
     const ordersCollection = this.db.collection('orders');
@@ -72,7 +107,7 @@ class MongoDBClient {
   }
 
   async nbDeliveries() {
-    if (!this.isAlive()) {
+    if (!(await this.isConnected())) {
       return -1;
     }
     const deliveriesCollection = this.db.collection('deliveries');
@@ -81,6 +116,7 @@ class MongoDBClient {
   }
 }
 
-const mongoClient = new MongoDBClient();
+const mongoClient = DBClient.getInstance();
+mongoClient.connect().catch(console.error);
 
 export default mongoClient;

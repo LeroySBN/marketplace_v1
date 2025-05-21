@@ -5,7 +5,6 @@ export interface User {
   name: string;
   email: string;
   password: string;
-  cart: CartItem[];
   created_at: Date;
   updated_at: Date;
 }
@@ -55,13 +54,4 @@ export interface ProductDelivery {
   productId: ObjectId;
   quantity: number;
   unitPrice: number;
-}
-
-export interface Vendor {
-  _id: ObjectId;
-  name: string;
-  email: string;
-  products: Product[];
-  created_at: Date;
-  updated_at: Date;
 }

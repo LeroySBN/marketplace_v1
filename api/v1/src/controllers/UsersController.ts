@@ -6,39 +6,6 @@ import redisClient from '../utils/redis';
 import { hashPassword } from '../utils/auth';
 
 class UsersController {
-  static async createUser(req: Request, res: Response): Promise<Response> {
-    try {
-      const { name, email, password } = req.body;
-
-      if (!name || !email || !password) {
-        return res.status(400).json({ error: 'Missing required fields' });
-      }
-
-      const users = mongoClient.db.collection<User>('users');
-      const existingUser = await users.findOne({ email });
-
-      if (existingUser) {
-        return res.status(400).json({ error: 'User already exists' });
-      }
-
-      const user: User = {
-        name,
-        email,
-        password: await hashPassword(password),
-        cart: [],
-        created_at: new Date(),
-        updated_at: new Date()
-      };
-
-      const result = await users.insertOne(user);
-      return res.status(201).json({ id: result.insertedId });
-
-    } catch (err) {
-      console.error('Error creating user:', err);
-      return res.status(500).json({ error: 'Internal server error' });
-    }
-  }
-
   static async getUser(req: Request, res: Response): Promise<Response> {
     try {
       const token = req.header('X-Token');

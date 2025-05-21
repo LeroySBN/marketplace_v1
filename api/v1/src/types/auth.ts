@@ -1,4 +1,5 @@
 import { ObjectId } from 'mongodb';
+import { CartItem, Product } from './index';
 
 export interface AuthCredentials {
   email: string;
@@ -17,6 +18,7 @@ export interface AuthUser {
   _id: ObjectId;
   email: string;
   password: string;
-  role: 'admin' | 'customer' | 'vendor';
+  role: 'admin' | 'buyer' | 'vendor';
   created_at: Date;
+  updated_at: Date;
 }

@@ -21,18 +21,18 @@ const IndexPage = ({ serverTime }: LandingProps) => (
       </div>
       <p className={styles["landing-desc"]}>Your one-stop platform to buy and sell products. Please choose your role to continue.</p>
       <div className={styles["landing-buttons"]}>
-        <Link href="/login/buyer" legacyBehavior>
+        <Link href="auth/buyer/login" legacyBehavior>
           <button className={styles["landing-btn"]}>Login as Buyer</button>
         </Link>
-        <Link href="/auth/vendor" legacyBehavior>
+        <Link href="auth/vendor/login" legacyBehavior>
           <button className={styles["landing-btn"]}>Login as Seller</button>
         </Link>
       </div>
       <div className={styles["landing-buttons"]}>
-        <Link href="/auth/buyer/register" legacyBehavior>
+        <Link href="auth/buyer/register" legacyBehavior>
           <button className={styles["landing-btn"]} style={{ background: '#fbbf24', color: '#111827' }}>Register as Buyer</button>
         </Link>
-        <Link href="/auth/vendor/register" legacyBehavior>
+        <Link href="auth/vendor/register" legacyBehavior>
           <button className={styles["landing-btn"]} style={{ background: '#fbbf24', color: '#111827' }}>Register as Seller</button>
         </Link>
       </div>

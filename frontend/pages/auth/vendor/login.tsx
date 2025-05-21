@@ -1,5 +1,5 @@
 import { useState } from "react";
-import styles from "../../styles/vendor-auth.module.scss";
+import styles from "../../../styles/vendor-auth.module.scss";
 import Head from "next/head";
 import Link from "next/link";
 
@@ -17,15 +17,15 @@ export default function VendorAuth() {
     setError("");
     setSuccess("");
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/vendor/login`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/signin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, role: "vendor" }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Login failed");
-      if (data.token) {
-        localStorage.setItem('vendor_token', data.token);
+      if (data.id) {
+        localStorage.setItem('vendor_token', data.id);
         localStorage.setItem('theme', 'light');
       }
       setSuccess("Login successful! Redirecting...");

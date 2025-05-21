@@ -19,7 +19,6 @@ router.post('/auth/signin', AuthController.signIn);
 router.post('/auth/signup', AuthController.signUp);
 
 // User routes
-router.post('/users', UsersController.createUser);
 router.get('/users/:id', UsersController.getUser);
 router.put('/users/:id', UsersController.updateUser);
 router.delete('/users/:id', UsersController.deleteUser);
@@ -28,7 +27,6 @@ router.get('/users/:id/orders', UsersController.getUserOrders);
 router.get('/users/:id/deliveries', UsersController.getUserDeliveries);
 
 // Vendor routes
-router.post('/vendors', VendorsController.createVendor);
 router.get('/vendors/:id', VendorsController.getVendor);
 router.put('/vendors/:id', VendorsController.updateVendor);
 router.delete('/vendors/:id', VendorsController.deleteVendor);

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import styles from "../../styles/buyer-auth.module.scss";
+import styles from "../../../styles/buyer-auth.module.scss";
 import Head from "next/head";
 import Link from "next/link";
 

@@ -3,6 +3,8 @@ import { ObjectId } from 'mongodb';
 import { AuthUser } from '../types/auth';
 import mongoClient from '../utils/mongo';
 import { hashPassword } from '../utils/auth';
+import { CartItem } from '../types';
+import { Product } from '../types';
 
 class AuthController {
   static async signIn(req: Request, res: Response): Promise<Response> {
@@ -39,7 +41,7 @@ class AuthController {
 
   static async signUp(req: Request, res: Response): Promise<Response> {
     try {
-      const { email, password, role } = req.body;
+      const { name, email, password, role } = req.body;
 
       if (!email || !password) {
         return res.status(400).json({ error: 'Missing required fields' });
@@ -53,17 +55,24 @@ class AuthController {
       }
 
       const hashedPassword = hashPassword(password);
+      let cart: CartItem[] = [];
+      let products: Product[] = [];
+      let list = role === 'vendor' ? products : cart;
+
       const result = await users.insertOne({
+        name,
         email,
         password: hashedPassword,
-        role: role || 'customer',
-        created_at: new Date()
+        role,
+        created_at: new Date(),
+        updated_at: new Date(),
+        list
       });
 
       return res.status(201).json({
         id: result.insertedId,
         email,
-        role: role || 'customer'
+        role
       });
 
     } catch (err) {

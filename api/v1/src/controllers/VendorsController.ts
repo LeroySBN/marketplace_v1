@@ -1,49 +1,11 @@
 import { Request, Response } from 'express';
 import { ObjectId } from 'mongodb';
-import { Vendor, Product } from '../types';
+import { User, Product } from '../types';
 import mongoClient from '../utils/mongo';
 import redisClient from '../utils/redis';
 import { hashPassword } from '../utils/auth';
 
 class VendorsController {
-  static async createVendor(req: Request, res: Response): Promise<Response> {
-    try {
-      const { name, email, password } = req.body as {
-        name: string;
-        email: string;
-        password: string;
-      };
-
-      if (!name || !email || !password) {
-        return res.status(400).json({ error: 'Missing required fields' });
-      }
-
-      const vendors = mongoClient.db.collection<Vendor>('vendors');
-      const existingVendor = await vendors.findOne({ email });
-
-      if (existingVendor) {
-        return res.status(400).json({ error: 'Vendor already exists' });
-      }
-
-      const vendor: Vendor = {
-        _id: new ObjectId(),
-        name,
-        email,
-        products: [],
-        created_at: new Date(),
-        updated_at: new Date()
-      };
-
-      const result = await vendors.insertOne(vendor);
-      await redisClient.set(`vendor_${email}`, await hashPassword(password), 86400); // 24 hours TTL
-      return res.status(201).json({ id: result.insertedId });
-
-    } catch (err) {
-      console.error('Error creating vendor:', err);
-      return res.status(500).json({ error: 'Internal server error' });
-    }
-  }
-
   static async getVendor(req: Request, res: Response): Promise<Response> {
     try {
       const { id } = req.params;
@@ -52,7 +14,7 @@ class VendorsController {
         return res.status(400).json({ error: 'Invalid vendor ID' });
       }
 
-      const vendors = mongoClient.db.collection<Vendor>('vendors');
+      const vendors = mongoClient.db.collection<User>('users');
       const vendor = await vendors.findOne({ _id: new ObjectId(id) });
 
       if (!vendor) {
@@ -85,7 +47,7 @@ class VendorsController {
         delete updates.password;
       }
 
-      const vendors = mongoClient.db.collection<Vendor>('vendors');
+      const vendors = mongoClient.db.collection<User>('users');
       const result = await vendors.updateOne(
         { _id: new ObjectId(id) },
         { $set: { ...updates, updated_at: new Date() } }
@@ -111,7 +73,7 @@ class VendorsController {
         return res.status(400).json({ error: 'Invalid vendor ID' });
       }
 
-      const vendors = mongoClient.db.collection<Vendor>('vendors');
+      const vendors = mongoClient.db.collection<User>('users');
       const vendor = await vendors.findOne({ _id: new ObjectId(id) });
 
       if (!vendor) {
@@ -191,7 +153,7 @@ class VendorsController {
         return res.status(400).json({ error: 'Missing required fields' });
       }
 
-      const vendors = mongoClient.db.collection<Vendor>('vendors');
+      const vendors = mongoClient.db.collection<User>('users');
       const vendor = await vendors.findOne({ _id: new ObjectId(id) });
 
       if (!vendor) {
@@ -229,7 +191,7 @@ class VendorsController {
         return res.status(400).json({ error: 'Invalid vendor or product ID' });
       }
 
-      const vendors = mongoClient.db.collection<Vendor>('vendors');
+      const vendors = mongoClient.db.collection<User>('users');
       const vendor = await vendors.findOne({ _id: new ObjectId(id) });
 
       if (!vendor) {

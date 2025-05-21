@@ -4,7 +4,6 @@ import styles from "../../styles/vendor-dashboard.module.scss";
 
 export default function VendorDashboard() {
   const [products, setProducts] = useState([]);
-  const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -23,16 +22,11 @@ export default function VendorDashboard() {
     if (!token) return;
     setLoading(true);
     Promise.all([
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/products`, {
-        headers: { Authorization: `Bearer ${token}` },
-      }).then(r => r.json()),
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/sales`, {
-        headers: { Authorization: `Bearer ${token}` },
-      }).then(r => r.json()),
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendors/${token}`)
+      .then(r => r.json())
     ])
-      .then(([prod, sal]) => {
-        setProducts(prod.products || []);
-        setSales(sal.sales || []);
+      .then(([vendor]) => {
+        setProducts(vendor.products || []);
         setLoading(false);
       })
       .catch(() => {
@@ -55,16 +49,6 @@ export default function VendorDashboard() {
             <li key={p.id} className={styles.productItem}>
               <span>{p.name}</span> <span>${p.price}</span>
               {/* Edit/Delete actions can go here */}
-            </li>
-          ))}
-        </ul>
-      </section>
-      <section className={styles.section}>
-        <h2>Sales</h2>
-        <ul className={styles.salesList}>
-          {sales.map((s: any) => (
-            <li key={s.id} className={styles.salesItem}>
-              <span>Order #{s.id}</span> <span>${s.total}</span>
             </li>
           ))}
         </ul>

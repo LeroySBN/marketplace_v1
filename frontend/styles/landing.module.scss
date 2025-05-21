@@ -1,0 +1,87 @@
+$primary: #2563eb;
+$secondary: #fbbf24;
+$card-bg: #fff;
+$shadow: 0 8px 32px 0 rgba(37,99,235,0.10);
+$border-radius: 1.25rem;
+$icon-bg: linear-gradient(135deg, #2563eb 0%, #fbbf24 100%);
+
+.landing-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(120deg, #f0f4f9 0%, #e0e7ef 100%);
+}
+
+.landing-card {
+  background: $card-bg;
+  box-shadow: $shadow;
+  border-radius: $border-radius;
+  padding: 3rem 2.5rem 2.5rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 350px;
+  max-width: 90vw;
+}
+
+.landing-icon {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: $icon-bg;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 12px 0 rgba(37,99,235,0.13);
+}
+
+.landing-title {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: $primary;
+  margin-bottom: 1.2rem;
+  text-align: center;
+  letter-spacing: -1px;
+}
+
+.landing-desc {
+  color: #64748b;
+  font-size: 1.1rem;
+  text-align: center;
+  margin-bottom: 2.2rem;
+}
+
+.landing-buttons {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.landing-btn {
+  padding: 1rem 2.5rem;
+  font-size: 1.12rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 0.75rem;
+  background: $primary;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 2px 16px 0 rgba(37,99,235,0.07);
+  transition: background 0.18s, color 0.18s, transform 0.15s;
+  outline: none;
+  &:hover, &:focus {
+    background: $secondary;
+    color: #111827;
+    transform: translateY(-2px) scale(1.04);
+  }
+}
+
+.landing-footer {
+  color: #a0aec0;
+  font-size: 0.97rem;
+  margin-top: 1.8rem;
+  text-align: center;
+}
